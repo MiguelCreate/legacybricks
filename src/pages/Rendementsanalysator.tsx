@@ -26,7 +26,9 @@ import {
   ChevronDown,
   ChevronUp,
   Euro,
-  Percent
+  Percent,
+  HelpCircle,
+  Sparkles
 } from "lucide-react";
 import { 
   analyzeInvestment, 
@@ -40,6 +42,8 @@ import { CashflowTable } from "@/components/analysator/CashflowTable";
 import { ExitAnalysisCard } from "@/components/analysator/ExitAnalysisCard";
 import { PartnerOverview } from "@/components/analysator/PartnerOverview";
 import { SnowballImpact } from "@/components/analysator/SnowballImpact";
+import { GuidedTour, getStepForSection } from "@/components/analysator/GuidedTour";
+import { VisualCharts } from "@/components/analysator/VisualCharts";
 
 type TimeFrame = "5j" | "10j" | "15j" | "30j";
 
@@ -57,21 +61,48 @@ interface Goal {
   huidig_bedrag: number;
 }
 
+// Section explanations for inline help
+const sectionExplanations: Record<string, { title: string; description: string }> = {
+  purchase: {
+    title: "💰 Aankoopkosten",
+    description: "Alle eenmalige kosten bij de aankoop van je pand. Deze bepalen je totale investering.",
+  },
+  mortgage: {
+    title: "🏦 Hypotheek",
+    description: "Hoeveel je leent en tegen welke voorwaarden. Dit bepaalt je maandlasten en hefboomwerking.",
+  },
+  rental: {
+    title: "🏠 Verhuurinkomsten",
+    description: "Je verwachte huurinkomsten. Wees realistisch - dit is de basis van je rendement!",
+  },
+  opex: {
+    title: "📊 Exploitatiekosten",
+    description: "Alle terugkerende kosten voor beheer en onderhoud. Onderschat deze niet!",
+  },
+  assumptions: {
+    title: "📈 Toekomstaannames",
+    description: "Hoe je verwacht dat huren, kosten en waarde ontwikkelen. Wees conservatief.",
+  },
+};
+
 export default function Rendementsanalysator() {
   const { user } = useAuth();
   const { toast } = useToast();
   
   const [activeTimeframe, setActiveTimeframe] = useState<TimeFrame>("10j");
   const [showPartnerOverview, setShowPartnerOverview] = useState(false);
+  const [showGuidedTour, setShowGuidedTour] = useState(true);
+  const [tourStep, setTourStep] = useState(1);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedGoalId, setSelectedGoalId] = useState<string>("");
   const [expandedSections, setExpandedSections] = useState({
     purchase: true,
-    mortgage: true,
-    rental: true,
-    opex: true,
-    assumptions: true,
+    mortgage: false,
+    rental: false,
+    opex: false,
+    assumptions: false,
   });
+  const [activeResultTab, setActiveResultTab] = useState<"kpis" | "charts" | "table">("kpis");
   
   // Form inputs
   const [inputs, setInputs] = useState<AnalysisInputs>({
@@ -130,7 +161,8 @@ export default function Rendementsanalysator() {
     setAnalysis(result);
   }, [activeTimeframe]);
   
-  const runAnalysis = useCallback(() => {
+  // Auto-run analysis on input changes
+  useEffect(() => {
     const result = analyzeInvestment(inputs);
     setAnalysis(result);
   }, [inputs]);
@@ -141,6 +173,9 @@ export default function Rendementsanalysator() {
   
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    // Update tour step when expanding a section
+    const step = getStepForSection(section);
+    if (step > 1) setTourStep(step);
   };
   
   const handleSaveAsProperty = async () => {
@@ -202,37 +237,58 @@ export default function Rendementsanalysator() {
     title, 
     sectionKey, 
     icon: Icon,
-    children 
+    children,
+    stepNumber
   }: { 
     title: string; 
     sectionKey: keyof typeof expandedSections;
     icon: React.ElementType;
     children: React.ReactNode;
-  }) => (
-    <Card className="shadow-card">
-      <CardHeader 
-        className="cursor-pointer py-3"
-        onClick={() => toggleSection(sectionKey)}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4 text-primary" />
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+    stepNumber: number;
+  }) => {
+    const explanation = sectionExplanations[sectionKey];
+    const isActive = expandedSections[sectionKey];
+    
+    return (
+      <Card className={`shadow-card transition-all ${isActive ? 'ring-2 ring-primary/20' : ''}`}>
+        <CardHeader 
+          className="cursor-pointer py-3"
+          onClick={() => toggleSection(sectionKey)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              }`}>
+                {stepNumber}
+              </div>
+              <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+              <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            </div>
+            {isActive ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
           </div>
-          {expandedSections[sectionKey] ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          {!isActive && explanation && (
+            <p className="text-xs text-muted-foreground mt-1 ml-8">{explanation.description}</p>
           )}
-        </div>
-      </CardHeader>
-      {expandedSections[sectionKey] && (
-        <CardContent className="pt-0 pb-4">
-          {children}
-        </CardContent>
-      )}
-    </Card>
-  );
+        </CardHeader>
+        {isActive && (
+          <CardContent className="pt-0 pb-4">
+            {explanation && (
+              <div className="bg-accent/50 rounded-lg p-3 mb-4">
+                <p className="text-sm text-foreground font-medium">{explanation.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{explanation.description}</p>
+              </div>
+            )}
+            {children}
+          </CardContent>
+        )}
+      </Card>
+    );
+  };
   
   const InputField = ({ 
     label, 
@@ -241,6 +297,7 @@ export default function Rendementsanalysator() {
     tooltip,
     prefix,
     suffix,
+    hint,
   }: { 
     label: string; 
     value: number; 
@@ -248,6 +305,7 @@ export default function Rendementsanalysator() {
     tooltip?: string;
     prefix?: string;
     suffix?: string;
+    hint?: string;
   }) => (
     <div className="space-y-1.5">
       <div className="flex items-center gap-1">
@@ -264,7 +322,7 @@ export default function Rendementsanalysator() {
           type="number"
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          className={`h-9 text-sm ${prefix ? 'pl-7' : ''} ${suffix ? 'pr-7' : ''}`}
+          className={`h-9 text-sm ${prefix ? 'pl-7' : ''} ${suffix ? 'pr-12' : ''}`}
         />
         {suffix && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -272,6 +330,7 @@ export default function Rendementsanalysator() {
           </span>
         )}
       </div>
+      {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
     </div>
   );
 
@@ -293,40 +352,69 @@ export default function Rendementsanalysator() {
           <div className="flex gap-2">
             <Button 
               variant="outline" 
+              size="sm"
+              onClick={() => {
+                setShowGuidedTour(true);
+                setTourStep(1);
+              }}
+              className="gap-2"
+            >
+              <HelpCircle className="h-4 w-4" />
+              Guide
+            </Button>
+            <Button 
+              variant="outline" 
               onClick={() => setShowPartnerOverview(true)}
               className="gap-2"
             >
               <Users className="h-4 w-4" />
               Partner Overzicht
             </Button>
-            <Button onClick={runAnalysis} className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Bereken
-            </Button>
           </div>
         </div>
         
+        {/* Guided Tour */}
+        {showGuidedTour && (
+          <GuidedTour 
+            currentStep={tourStep}
+            onStepChange={setTourStep}
+            onClose={() => setShowGuidedTour(false)}
+          />
+        )}
+        
         {/* Timeframe Tabs */}
-        <Tabs value={activeTimeframe} onValueChange={(v) => setActiveTimeframe(v as TimeFrame)}>
-          <TabsList className="grid w-full max-w-md grid-cols-4">
-            <TabsTrigger value="5j">5 Jaar</TabsTrigger>
-            <TabsTrigger value="10j">10 Jaar</TabsTrigger>
-            <TabsTrigger value="15j">15 Jaar</TabsTrigger>
-            <TabsTrigger value="30j">30 Jaar</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <Tabs value={activeTimeframe} onValueChange={(v) => setActiveTimeframe(v as TimeFrame)}>
+            <TabsList className="grid w-full max-w-md grid-cols-4">
+              <TabsTrigger value="5j">5 Jaar</TabsTrigger>
+              <TabsTrigger value="10j">10 Jaar</TabsTrigger>
+              <TabsTrigger value="15j">15 Jaar</TabsTrigger>
+              <TabsTrigger value="30j">30 Jaar</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          {analysis && (
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm text-muted-foreground">
+                Live berekening actief
+              </span>
+            </div>
+          )}
+        </div>
         
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Input Column */}
           <div className="space-y-4 lg:col-span-1">
             {/* Purchase Section */}
-            <InputSection title="Aankoop" sectionKey="purchase" icon={Building2}>
+            <InputSection title="Aankoop" sectionKey="purchase" icon={Building2} stepNumber={1}>
               <div className="grid gap-3">
                 <InputField
                   label="Aankoopprijs"
                   value={inputs.purchasePrice}
                   onChange={(v) => updateInput("purchasePrice", v)}
                   prefix="€"
+                  hint="De vraagprijs of jouw bod"
                 />
                 <InputField
                   label="IMT (overdrachtsbelasting)"
@@ -334,55 +422,62 @@ export default function Rendementsanalysator() {
                   onChange={(v) => updateInput("imt", v)}
                   tooltip="Imposto Municipal sobre Transmissões: eenmalige belasting bij aankoop (0-8%)"
                   prefix="€"
+                  hint="Meestal 6-8% voor tweede woning"
                 />
                 <InputField
                   label="Notariskosten"
                   value={inputs.notaryFees}
                   onChange={(v) => updateInput("notaryFees", v)}
                   prefix="€"
+                  hint="Inclusief registratie en juridische kosten"
                 />
                 <InputField
                   label="Renovatiekosten"
                   value={inputs.renovationCosts}
                   onChange={(v) => updateInput("renovationCosts", v)}
                   prefix="€"
+                  hint="Eventuele verbouwingen voor verhuur"
                 />
                 <InputField
                   label="Inrichtingskosten"
                   value={inputs.furnishingCosts}
                   onChange={(v) => updateInput("furnishingCosts", v)}
                   prefix="€"
+                  hint="Meubels, keukenapparatuur, etc."
                 />
               </div>
             </InputSection>
             
             {/* Mortgage Section */}
-            <InputSection title="Hypotheek" sectionKey="mortgage" icon={PiggyBank}>
+            <InputSection title="Hypotheek" sectionKey="mortgage" icon={PiggyBank} stepNumber={2}>
               <div className="grid gap-3">
                 <InputField
                   label="LTV (Loan-to-Value)"
                   value={inputs.ltv}
                   onChange={(v) => updateInput("ltv", v)}
-                  tooltip={metricExplanations.ltv?.explanation}
+                  tooltip="Hoeveel % je leent van de aankoopprijs. 75% LTV = je betaalt 25% zelf."
                   suffix="%"
+                  hint="Banken geven vaak max 70-80%"
                 />
                 <InputField
                   label="Rente"
                   value={inputs.interestRate}
                   onChange={(v) => updateInput("interestRate", v)}
                   suffix="%"
+                  hint="Huidige marktrente in Portugal"
                 />
                 <InputField
                   label="Looptijd"
                   value={inputs.loanTermYears}
                   onChange={(v) => updateInput("loanTermYears", v)}
                   suffix="jaar"
+                  hint="Standaard 25-30 jaar"
                 />
               </div>
             </InputSection>
             
             {/* Rental Section */}
-            <InputSection title="Verhuur" sectionKey="rental" icon={Euro}>
+            <InputSection title="Verhuur" sectionKey="rental" icon={Euro} stepNumber={3}>
               <div className="grid gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Type verhuur</Label>
@@ -394,11 +489,14 @@ export default function Rendementsanalysator() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="longterm">Langdurig</SelectItem>
+                      <SelectItem value="longterm">Langdurig (vaste huurder)</SelectItem>
                       <SelectItem value="shortterm">Korte termijn (Airbnb)</SelectItem>
-                      <SelectItem value="mixed">Gemengd</SelectItem>
+                      <SelectItem value="mixed">Gemengd (beiden)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-[10px] text-muted-foreground">
+                    Langdurig = stabiel, korte termijn = hoger rendement maar meer werk
+                  </p>
                 </div>
                 
                 {(inputs.rentalType === "longterm" || inputs.rentalType === "mixed") && (
@@ -407,6 +505,7 @@ export default function Rendementsanalysator() {
                     value={inputs.monthlyRentLT}
                     onChange={(v) => updateInput("monthlyRentLT", v)}
                     prefix="€"
+                    hint="Check Idealista voor marktprijzen"
                   />
                 )}
                 
@@ -418,6 +517,7 @@ export default function Rendementsanalysator() {
                       onChange={(v) => updateInput("stOccupancy", v)}
                       tooltip="Percentage van het jaar dat het pand verhuurd is"
                       suffix="%"
+                      hint="60-70% is realistisch voor Airbnb"
                     />
                     <InputField
                       label="ADR (gemiddelde dagprijs)"
@@ -425,6 +525,7 @@ export default function Rendementsanalysator() {
                       onChange={(v) => updateInput("stADR", v)}
                       tooltip="Average Daily Rate: gemiddelde prijs per nacht"
                       prefix="€"
+                      hint="Check AirDNA voor marktdata"
                     />
                   </>
                 )}
@@ -432,7 +533,7 @@ export default function Rendementsanalysator() {
             </InputSection>
             
             {/* OPEX Section */}
-            <InputSection title="Exploitatiekosten" sectionKey="opex" icon={Percent}>
+            <InputSection title="Exploitatiekosten" sectionKey="opex" icon={Percent} stepNumber={4}>
               <div className="grid gap-3">
                 <InputField
                   label="Beheerkosten"
@@ -440,12 +541,14 @@ export default function Rendementsanalysator() {
                   onChange={(v) => updateInput("managementPercent", v)}
                   tooltip="Percentage van huurinkomsten voor property management"
                   suffix="%"
+                  hint="8-15% is gebruikelijk"
                 />
                 <InputField
                   label="Onderhoud (jaarlijks)"
                   value={inputs.maintenanceYearly}
                   onChange={(v) => updateInput("maintenanceYearly", v)}
                   prefix="€"
+                  hint="1-2% van woningwaarde per jaar"
                 />
                 <InputField
                   label="IMI (jaarlijks)"
@@ -453,6 +556,7 @@ export default function Rendementsanalysator() {
                   onChange={(v) => updateInput("imiYearly", v)}
                   tooltip="Imposto Municipal sobre Imóveis: jaarlijkse onroerendgoedbelasting"
                   prefix="€"
+                  hint="0.3-0.5% van kadastrale waarde"
                 />
                 <InputField
                   label="Verzekering (jaarlijks)"
@@ -466,6 +570,7 @@ export default function Rendementsanalysator() {
                   onChange={(v) => updateInput("condoMonthly", v)}
                   prefix="€"
                   suffix="/mnd"
+                  hint="Vraag dit op bij de verkoper"
                 />
                 <InputField
                   label="Utilities"
@@ -473,12 +578,13 @@ export default function Rendementsanalysator() {
                   onChange={(v) => updateInput("utilitiesMonthly", v)}
                   prefix="€"
                   suffix="/mnd"
+                  hint="Alleen als jij betaalt (korte termijn verhuur)"
                 />
               </div>
             </InputSection>
             
             {/* Assumptions Section */}
-            <InputSection title="Aannames" sectionKey="assumptions" icon={TrendingUp}>
+            <InputSection title="Aannames" sectionKey="assumptions" icon={TrendingUp} stepNumber={5}>
               <div className="grid gap-3">
                 <InputField
                   label="Huurgroei"
@@ -486,6 +592,7 @@ export default function Rendementsanalysator() {
                   onChange={(v) => updateInput("rentGrowth", v)}
                   tooltip="Verwachte jaarlijkse stijging van de huurprijs"
                   suffix="%/jaar"
+                  hint="2% is conservatief"
                 />
                 <InputField
                   label="Kostenstijging"
@@ -493,6 +600,7 @@ export default function Rendementsanalysator() {
                   onChange={(v) => updateInput("costGrowth", v)}
                   tooltip="Verwachte jaarlijkse stijging van exploitatiekosten"
                   suffix="%/jaar"
+                  hint="Volgt meestal inflatie"
                 />
                 <InputField
                   label="Waardegroei"
@@ -500,6 +608,7 @@ export default function Rendementsanalysator() {
                   onChange={(v) => updateInput("valueGrowth", v)}
                   tooltip="Verwachte jaarlijkse stijging van de woningwaarde"
                   suffix="%/jaar"
+                  hint="2-3% is realistisch langetermijn"
                 />
               </div>
             </InputSection>
@@ -525,7 +634,7 @@ export default function Rendementsanalysator() {
                         ) : (
                           <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
                         )}
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium text-foreground">
                             {riskAssessment.level === 'good' ? '🟢 Goed rendabel' :
                              riskAssessment.level === 'moderate' ? '🟡 Matig rendabel' :
@@ -535,26 +644,52 @@ export default function Rendementsanalysator() {
                             {riskAssessment.reasons[0]}
                           </p>
                         </div>
+                        <InfoTooltip 
+                          title="Beoordeling"
+                          content={riskAssessment.reasons.join(' | ')}
+                        />
                       </div>
                     </CardContent>
                   </Card>
                 )}
                 
-                {/* KPI Dashboard */}
-                <KPIDashboard analysis={analysis} />
-                
-                {/* Cashflow Table */}
-                <CashflowTable 
-                  cashflows={analysis.yearlyCashflows} 
-                  timeframe={activeTimeframe}
-                />
-                
-                {/* Exit Analysis */}
-                <ExitAnalysisCard 
-                  exitAnalysis={analysis.exitAnalysis}
-                  years={timeframeYears[activeTimeframe]}
-                  ownCapital={analysis.ownCapital}
-                />
+                {/* Results Tabs */}
+                <Tabs value={activeResultTab} onValueChange={(v) => setActiveResultTab(v as typeof activeResultTab)}>
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="kpis" className="gap-2">
+                      <Target className="h-4 w-4" />
+                      KPI's
+                    </TabsTrigger>
+                    <TabsTrigger value="charts" className="gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Grafieken
+                    </TabsTrigger>
+                    <TabsTrigger value="table" className="gap-2">
+                      <Calculator className="h-4 w-4" />
+                      Tabel
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="kpis" className="mt-4 space-y-4">
+                    <KPIDashboard analysis={analysis} />
+                    <ExitAnalysisCard 
+                      exitAnalysis={analysis.exitAnalysis}
+                      years={timeframeYears[activeTimeframe]}
+                      ownCapital={analysis.ownCapital}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="charts" className="mt-4">
+                    <VisualCharts analysis={analysis} />
+                  </TabsContent>
+                  
+                  <TabsContent value="table" className="mt-4">
+                    <CashflowTable 
+                      cashflows={analysis.yearlyCashflows} 
+                      timeframe={activeTimeframe}
+                    />
+                  </TabsContent>
+                </Tabs>
                 
                 {/* Snowball Effect */}
                 <SnowballImpact
@@ -572,6 +707,10 @@ export default function Rendementsanalysator() {
                       <CardTitle className="text-base flex items-center gap-2">
                         <Target className="h-4 w-4 text-primary" />
                         Koppel aan Doel
+                        <InfoTooltip 
+                          title="Doelkoppeling"
+                          content="Koppel dit pand aan een van je financiële doelen om te zien hoeveel het bijdraagt."
+                        />
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -607,7 +746,7 @@ export default function Rendementsanalysator() {
                                 <p className="text-sm text-muted-foreground mt-1">
                                   Dat dekt{" "}
                                   <strong>{Math.round((monthlyContribution / (goal.doelbedrag / 12)) * 100)}%</strong> van je maandelijkse doelbijdrage voor "{goal.naam}".
-                                  {monthsToGoal < Infinity && (
+                                  {monthsToGoal < Infinity && monthsToGoal > 0 && (
                                     <> Je bereikt dit doel in ongeveer <strong>{monthsToGoal} maanden</strong>.</>
                                   )}
                                 </p>
