@@ -41,6 +41,7 @@ interface Tenant {
   naam: string;
   huurbedrag: number;
   room_id: string | null;
+  unit_nummer: number;
 }
 
 interface RoomManagerProps {
@@ -77,7 +78,7 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
           .order("naam"),
         supabase
           .from("tenants")
-          .select("id, naam, huurbedrag, room_id")
+          .select("id, naam, huurbedrag, room_id, unit_nummer")
           .eq("property_id", propertyId)
           .eq("actief", true),
       ]);
@@ -176,9 +177,14 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
     return room.actieve_huurder_id || tenants.some((t) => t.room_id === room.id);
   };
 
+  // Huurders zonder kamer (standalone units)
+  const standaloneUnits = tenants.filter((t) => !t.room_id && !rooms.some((r) => r.actieve_huurder_id === t.id));
+
   const totalM2 = rooms.reduce((sum, r) => sum + (r.oppervlakte_m2 || 0), 0);
-  const totalRent = rooms.reduce((sum, r) => sum + r.huurprijs, 0);
+  const totalRent = rooms.reduce((sum, r) => sum + r.huurprijs, 0) + standaloneUnits.reduce((sum, t) => sum + Number(t.huurbedrag), 0);
   const occupiedRooms = rooms.filter((r) => isRoomOccupied(r)).length;
+  const totalUnits = rooms.length + standaloneUnits.length;
+  const totalOccupied = occupiedRooms + standaloneUnits.length;
 
   if (loading) {
     return <div className="animate-pulse h-32 bg-muted rounded-lg" />;
@@ -188,11 +194,17 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
     <div className="space-y-4">
       {/* Summary */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-4 text-sm flex-wrap">
           <span className="flex items-center gap-1 text-muted-foreground">
             <DoorOpen className="w-4 h-4" />
             {rooms.length} {rooms.length === 1 ? "kamer" : "kamers"}
           </span>
+          {standaloneUnits.length > 0 && (
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <User className="w-4 h-4" />
+              {standaloneUnits.length} {standaloneUnits.length === 1 ? "unit" : "units"}
+            </span>
+          )}
           <span className="flex items-center gap-1 text-muted-foreground">
             <Ruler className="w-4 h-4" />
             {totalM2} m²
@@ -201,8 +213,8 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
             <Euro className="w-4 h-4" />
             €{totalRent.toLocaleString()}/mnd
           </span>
-          <Badge variant={occupiedRooms === rooms.length && rooms.length > 0 ? "success" : "secondary"}>
-            {occupiedRooms}/{rooms.length} verhuurd
+          <Badge variant={totalOccupied === totalUnits && totalUnits > 0 ? "success" : "secondary"}>
+            {totalOccupied}/{totalUnits} verhuurd
           </Badge>
         </div>
         <Button
@@ -297,6 +309,42 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
               </Collapsible>
             );
           })}
+        </div>
+      )}
+
+      {/* Standalone Units (huurders zonder kamer) */}
+      {standaloneUnits.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Huurders / Units (niet aan kamer gekoppeld)
+          </h3>
+          <div className="grid gap-2">
+            {standaloneUnits.map((tenant) => (
+              <div
+                key={tenant.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                    <User className="w-4 h-4 text-success" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{tenant.naam}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Unit {tenant.unit_nummer}</span>
+                      <span>•</span>
+                      <span className="text-success">€{Number(tenant.huurbedrag).toLocaleString()}/mnd</span>
+                    </div>
+                  </div>
+                </div>
+                <Badge variant="success" className="gap-1">
+                  <User className="w-3 h-3" />
+                  Actief
+                </Badge>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
