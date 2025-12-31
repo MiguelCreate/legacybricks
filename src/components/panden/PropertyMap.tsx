@@ -2,9 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Building2, MapPin, Euro, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { MapPin } from "lucide-react";
 
 // Fix for default marker icons in Leaflet with Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -45,8 +43,8 @@ interface PropertyMapProps {
   onPropertyClick?: (property: PropertyBase) => void;
 }
 
-// Component to fit bounds
-const FitBounds = ({ properties }: { properties: PropertyWithCoords[] }) => {
+// Component to fit bounds - must be child of MapContainer
+const MapController = ({ properties }: { properties: PropertyWithCoords[] }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -81,6 +79,13 @@ const geocodeAddress = async (address: string): Promise<{ lat: number; lng: numb
     console.error("Geocoding error:", error);
   }
   return null;
+};
+
+const statusLabels: Record<string, string> = {
+  aankoop: "Aankoop",
+  renovatie: "Renovatie",
+  verhuur: "Verhuurd",
+  te_koop: "Te Koop",
 };
 
 export const PropertyMap = ({ properties, onPropertyClick }: PropertyMapProps) => {
@@ -119,6 +124,7 @@ export const PropertyMap = ({ properties, onPropertyClick }: PropertyMapProps) =
     if (properties.length > 0) {
       geocodeProperties();
     } else {
+      setPropertiesWithCoords([]);
       setLoading(false);
     }
   }, [properties]);
@@ -138,12 +144,16 @@ export const PropertyMap = ({ properties, onPropertyClick }: PropertyMapProps) =
     );
   }
 
-  const statusConfig: Record<string, { label: string; color: string }> = {
-    aankoop: { label: "Aankoop", color: "secondary" },
-    renovatie: { label: "Renovatie", color: "warning" },
-    verhuur: { label: "Verhuurd", color: "success" },
-    te_koop: { label: "Te Koop", color: "destructive" },
-  };
+  if (propertiesWithCoords.length === 0 && !loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-muted/30 rounded-xl">
+        <div className="text-center">
+          <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Geen locaties gevonden</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full rounded-xl overflow-hidden border shadow-card">
@@ -158,48 +168,61 @@ export const PropertyMap = ({ properties, onPropertyClick }: PropertyMapProps) =
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {propertiesWithCoords.length > 0 && <FitBounds properties={propertiesWithCoords} />}
+        <MapController properties={propertiesWithCoords} />
 
         {propertiesWithCoords.map((property) => (
           <Marker key={property.id} position={[property.lat, property.lng]} icon={customIcon}>
             <Popup>
-              <div className="min-w-[200px] p-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Building2 className="w-4 h-4 text-primary" />
-                  <span className="font-semibold">{property.naam}</span>
-                </div>
-                
-                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {property.locatie}
+              <div style={{ minWidth: "180px", padding: "4px" }}>
+                <h4 style={{ fontWeight: 600, marginBottom: "4px", fontSize: "14px" }}>
+                  {property.naam}
+                </h4>
+                <p style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}>
+                  📍 {property.locatie}
                 </p>
-
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant={statusConfig[property.status]?.color as any || "secondary"}>
-                    {statusConfig[property.status]?.label || property.status}
-                  </Badge>
+                <p style={{ fontSize: "11px", marginBottom: "4px" }}>
+                  <span style={{ 
+                    background: "#eee", 
+                    padding: "2px 6px", 
+                    borderRadius: "4px",
+                    fontSize: "10px"
+                  }}>
+                    {statusLabels[property.status] || property.status}
+                  </span>
                   {property.aantal_units && property.aantal_units > 1 && (
-                    <Badge variant="outline" className="text-xs">
+                    <span style={{ 
+                      marginLeft: "4px",
+                      background: "#e3f2fd", 
+                      padding: "2px 6px", 
+                      borderRadius: "4px",
+                      fontSize: "10px"
+                    }}>
                       {property.aantal_units} units
-                    </Badge>
+                    </span>
                   )}
-                </div>
-
+                </p>
                 {property.maandelijkse_huur && property.maandelijkse_huur > 0 && (
-                  <p className="text-sm flex items-center gap-1 text-success mb-2">
-                    <Euro className="w-3 h-3" />
+                  <p style={{ fontSize: "12px", color: "#22c55e", fontWeight: 500 }}>
                     €{Number(property.maandelijkse_huur).toLocaleString()}/mnd
                   </p>
                 )}
-
                 {onPropertyClick && (
-                  <Button
-                    size="sm"
-                    className="w-full mt-2"
+                  <button
                     onClick={() => onPropertyClick(property)}
+                    style={{
+                      width: "100%",
+                      marginTop: "8px",
+                      padding: "6px 12px",
+                      background: "#3b82f6",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                    }}
                   >
                     Bekijk pand
-                  </Button>
+                  </button>
                 )}
               </div>
             </Popup>
