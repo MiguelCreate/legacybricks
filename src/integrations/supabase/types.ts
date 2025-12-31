@@ -197,6 +197,45 @@ export type Database = {
           },
         ]
       }
+      legacy_settings: {
+        Row: {
+          created_at: string
+          erfopvolging_optie: string | null
+          familie_rollen: Json | null
+          fiscale_deadlines: Json | null
+          id: string
+          jaarlijkse_review_datum: string | null
+          notities: string | null
+          updated_at: string
+          user_id: string
+          waardenverklaring: string | null
+        }
+        Insert: {
+          created_at?: string
+          erfopvolging_optie?: string | null
+          familie_rollen?: Json | null
+          fiscale_deadlines?: Json | null
+          id?: string
+          jaarlijkse_review_datum?: string | null
+          notities?: string | null
+          updated_at?: string
+          user_id: string
+          waardenverklaring?: string | null
+        }
+        Update: {
+          created_at?: string
+          erfopvolging_optie?: string | null
+          familie_rollen?: Json | null
+          fiscale_deadlines?: Json | null
+          id?: string
+          jaarlijkse_review_datum?: string | null
+          notities?: string | null
+          updated_at?: string
+          user_id?: string
+          waardenverklaring?: string | null
+        }
+        Relationships: []
+      }
       loans: {
         Row: {
           created_at: string
@@ -207,6 +246,8 @@ export type Database = {
           maandlast: number
           property_id: string
           rente_percentage: number | null
+          rente_type: string | null
+          restschuld: number | null
           startdatum: string | null
           updated_at: string
         }
@@ -219,6 +260,8 @@ export type Database = {
           maandlast: number
           property_id: string
           rente_percentage?: number | null
+          rente_type?: string | null
+          restschuld?: number | null
           startdatum?: string | null
           updated_at?: string
         }
@@ -231,6 +274,8 @@ export type Database = {
           maandlast?: number
           property_id?: string
           rente_percentage?: number | null
+          rente_type?: string | null
+          restschuld?: number | null
           startdatum?: string | null
           updated_at?: string
         }
@@ -326,7 +371,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          aow_maandelijks: number | null
           begeleiding_aan: boolean | null
+          beleggingen: number | null
           created_at: string
           email: string
           erfgoed_mantra: string | null
@@ -335,12 +382,16 @@ export type Database = {
           huidige_leeftijd: number | null
           id: string
           naam: string
+          overige_inkomsten: number | null
+          pensioen_maandelijks: number | null
           spaargeld: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          aow_maandelijks?: number | null
           begeleiding_aan?: boolean | null
+          beleggingen?: number | null
           created_at?: string
           email: string
           erfgoed_mantra?: string | null
@@ -349,12 +400,16 @@ export type Database = {
           huidige_leeftijd?: number | null
           id?: string
           naam: string
+          overige_inkomsten?: number | null
+          pensioen_maandelijks?: number | null
           spaargeld?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          aow_maandelijks?: number | null
           begeleiding_aan?: boolean | null
+          beleggingen?: number | null
           created_at?: string
           email?: string
           erfgoed_mantra?: string | null
@@ -363,6 +418,8 @@ export type Database = {
           huidige_leeftijd?: number | null
           id?: string
           naam?: string
+          overige_inkomsten?: number | null
+          pensioen_maandelijks?: number | null
           spaargeld?: number | null
           updated_at?: string
           user_id?: string
@@ -371,8 +428,11 @@ export type Database = {
       }
       properties: {
         Row: {
+          aankoopdatum: string | null
           aankoopprijs: number
+          beheerkosten_percentage: number | null
           created_at: string
+          eigen_inleg: number | null
           energie_vervaldatum: string | null
           energielabel: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding: string | null
@@ -380,19 +440,37 @@ export type Database = {
           gezondheidsscore: number | null
           google_drive_link: string | null
           id: string
+          imi_percentage: number | null
+          imt_betaald: number | null
           is_pinned: boolean | null
+          leegstand_buffer_percentage: number | null
           locatie: string
+          maandelijkse_huur: number | null
           naam: string
+          notaris_kosten: number | null
+          onderhoud_jaarlijks: number | null
           oppervlakte_m2: number | null
+          risico_fiscaal: number | null
+          risico_fysiek: number | null
+          risico_juridisch: number | null
+          risico_markt: number | null
+          risico_operationeel: number | null
           status: Database["public"]["Enums"]["property_status"]
+          subsidie_bedrag: number | null
+          subsidie_naam: string | null
+          type_verhuur: string | null
           updated_at: string
           user_id: string
+          verzekering_jaarlijks: number | null
           waardering: number | null
           waarom_gekocht: string | null
         }
         Insert: {
+          aankoopdatum?: string | null
           aankoopprijs: number
+          beheerkosten_percentage?: number | null
           created_at?: string
+          eigen_inleg?: number | null
           energie_vervaldatum?: string | null
           energielabel?: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding?: string | null
@@ -400,19 +478,37 @@ export type Database = {
           gezondheidsscore?: number | null
           google_drive_link?: string | null
           id?: string
+          imi_percentage?: number | null
+          imt_betaald?: number | null
           is_pinned?: boolean | null
+          leegstand_buffer_percentage?: number | null
           locatie: string
+          maandelijkse_huur?: number | null
           naam: string
+          notaris_kosten?: number | null
+          onderhoud_jaarlijks?: number | null
           oppervlakte_m2?: number | null
+          risico_fiscaal?: number | null
+          risico_fysiek?: number | null
+          risico_juridisch?: number | null
+          risico_markt?: number | null
+          risico_operationeel?: number | null
           status?: Database["public"]["Enums"]["property_status"]
+          subsidie_bedrag?: number | null
+          subsidie_naam?: string | null
+          type_verhuur?: string | null
           updated_at?: string
           user_id: string
+          verzekering_jaarlijks?: number | null
           waardering?: number | null
           waarom_gekocht?: string | null
         }
         Update: {
+          aankoopdatum?: string | null
           aankoopprijs?: number
+          beheerkosten_percentage?: number | null
           created_at?: string
+          eigen_inleg?: number | null
           energie_vervaldatum?: string | null
           energielabel?: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding?: string | null
@@ -420,13 +516,28 @@ export type Database = {
           gezondheidsscore?: number | null
           google_drive_link?: string | null
           id?: string
+          imi_percentage?: number | null
+          imt_betaald?: number | null
           is_pinned?: boolean | null
+          leegstand_buffer_percentage?: number | null
           locatie?: string
+          maandelijkse_huur?: number | null
           naam?: string
+          notaris_kosten?: number | null
+          onderhoud_jaarlijks?: number | null
           oppervlakte_m2?: number | null
+          risico_fiscaal?: number | null
+          risico_fysiek?: number | null
+          risico_juridisch?: number | null
+          risico_markt?: number | null
+          risico_operationeel?: number | null
           status?: Database["public"]["Enums"]["property_status"]
+          subsidie_bedrag?: number | null
+          subsidie_naam?: string | null
+          type_verhuur?: string | null
           updated_at?: string
           user_id?: string
+          verzekering_jaarlijks?: number | null
           waardering?: number | null
           waarom_gekocht?: string | null
         }

@@ -11,6 +11,10 @@ import Panden from "./pages/Panden";
 import Huurders from "./pages/Huurders";
 import Financien from "./pages/Financien";
 import Instellingen from "./pages/Instellingen";
+import Doelen from "./pages/Doelen";
+import Sneeuwbal from "./pages/Sneeuwbal";
+import NettoVermogen from "./pages/NettoVermogen";
+import Pensioen from "./pages/Pensioen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +32,10 @@ const App = () => (
             <Route path="/panden" element={<ProtectedRoute><Panden /></ProtectedRoute>} />
             <Route path="/huurders" element={<ProtectedRoute><Huurders /></ProtectedRoute>} />
             <Route path="/financien" element={<ProtectedRoute><Financien /></ProtectedRoute>} />
+            <Route path="/doelen" element={<ProtectedRoute><Doelen /></ProtectedRoute>} />
+            <Route path="/sneeuwbal" element={<ProtectedRoute><Sneeuwbal /></ProtectedRoute>} />
+            <Route path="/vermogen" element={<ProtectedRoute><NettoVermogen /></ProtectedRoute>} />
+            <Route path="/pensioen" element={<ProtectedRoute><Pensioen /></ProtectedRoute>} />
             <Route path="/instellingen" element={<ProtectedRoute><Instellingen /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

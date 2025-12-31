@@ -1,20 +1,21 @@
-import { Home, Building2, Users, Wallet, Settings, FileText, Target, Bell, HelpCircle, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, Building2, Users, Wallet, Settings, Target, Bell, HelpCircle, LogOut, ChevronLeft, ChevronRight, Snowflake, PiggyBank, Sunset } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const mainNavItems = [
   { icon: Home, label: "Dashboard", path: "/" },
   { icon: Building2, label: "Panden", path: "/panden" },
   { icon: Users, label: "Huurders", path: "/huurders" },
   { icon: Wallet, label: "Financiën", path: "/financien" },
-  { icon: FileText, label: "Contracten", path: "/contracten" },
   { icon: Target, label: "Doelen", path: "/doelen" },
+  { icon: Snowflake, label: "Sneeuwbal", path: "/sneeuwbal" },
+  { icon: PiggyBank, label: "Vermogen", path: "/vermogen" },
+  { icon: Sunset, label: "Pensioen", path: "/pensioen" },
 ];
 
 const secondaryNavItems = [
-  { icon: Bell, label: "Meldingen", path: "/meldingen" },
   { icon: Settings, label: "Instellingen", path: "/instellingen" },
-  { icon: HelpCircle, label: "Help", path: "/help" },
 ];
 
 export const Sidebar = () => {
@@ -98,14 +99,6 @@ export const Sidebar = () => {
           );
         })}
 
-        <button
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-destructive hover:bg-destructive/10 transition-colors ${
-            isCollapsed ? "justify-center" : ""
-          }`}
-        >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!isCollapsed && <span>Uitloggen</span>}
-        </button>
       </div>
     </aside>
   );
