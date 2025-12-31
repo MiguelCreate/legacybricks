@@ -136,7 +136,7 @@ Focus op:
 
     console.log('Generating advice for property:', property.naam);
 
-    const response = await fetch('https://ai-gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
