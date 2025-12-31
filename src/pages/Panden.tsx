@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Building2, Plus, Search, Filter, MapPin, Euro, Users, MoreVertical, Star, Pencil, Trash2, Archive, AlertTriangle } from "lucide-react";
+import { Building2, Plus, Search, Filter, MapPin, Euro, Users, MoreVertical, Star, Pencil, Trash2, Archive, AlertTriangle, Droplets, Flame, Zap, Home } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +63,7 @@ const Panden = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [formData, setFormData] = useState<Partial<PropertyInsert>>({
+  const [formData, setFormData] = useState<Partial<PropertyInsert> & { water_maandelijks?: number; gas_maandelijks?: number; elektriciteit_maandelijks?: number; condominium_maandelijks?: number }>({
     naam: "",
     locatie: "",
     status: "aankoop",
@@ -79,6 +79,10 @@ const Panden = () => {
     risico_fiscaal: 1,
     risico_fysiek: 1,
     risico_operationeel: 1,
+    water_maandelijks: 0,
+    gas_maandelijks: 0,
+    elektriciteit_maandelijks: 0,
+    condominium_maandelijks: 0,
   });
 
   useEffect(() => {
@@ -150,7 +154,11 @@ const Panden = () => {
             risico_fiscaal: formData.risico_fiscaal,
             risico_fysiek: formData.risico_fysiek,
             risico_operationeel: formData.risico_operationeel,
-          })
+            water_maandelijks: formData.water_maandelijks,
+            gas_maandelijks: formData.gas_maandelijks,
+            elektriciteit_maandelijks: formData.elektriciteit_maandelijks,
+            condominium_maandelijks: formData.condominium_maandelijks,
+          } as any)
           .eq("id", editingProperty.id);
 
         if (error) throw error;
@@ -177,7 +185,11 @@ const Panden = () => {
           risico_fiscaal: formData.risico_fiscaal || 1,
           risico_fysiek: formData.risico_fysiek || 1,
           risico_operationeel: formData.risico_operationeel || 1,
-        });
+          water_maandelijks: formData.water_maandelijks || 0,
+          gas_maandelijks: formData.gas_maandelijks || 0,
+          elektriciteit_maandelijks: formData.elektriciteit_maandelijks || 0,
+          condominium_maandelijks: formData.condominium_maandelijks || 0,
+        } as any);
 
         if (error) throw error;
 
@@ -217,6 +229,10 @@ const Panden = () => {
       risico_fiscaal: property.risico_fiscaal || 1,
       risico_fysiek: property.risico_fysiek || 1,
       risico_operationeel: property.risico_operationeel || 1,
+      water_maandelijks: (property as any).water_maandelijks || 0,
+      gas_maandelijks: (property as any).gas_maandelijks || 0,
+      elektriciteit_maandelijks: (property as any).elektriciteit_maandelijks || 0,
+      condominium_maandelijks: (property as any).condominium_maandelijks || 0,
     });
     setIsDialogOpen(true);
   };
@@ -317,6 +333,10 @@ const Panden = () => {
       risico_fiscaal: 1,
       risico_fysiek: 1,
       risico_operationeel: 1,
+      water_maandelijks: 0,
+      gas_maandelijks: 0,
+      elektriciteit_maandelijks: 0,
+      condominium_maandelijks: 0,
     });
   };
 
@@ -708,8 +728,91 @@ const Panden = () => {
                 />
               </div>
 
+              {/* Nutsvoorzieningen Section */}
+              <div className="col-span-2 pt-4 border-t">
+                <div className="flex items-center gap-2 mb-4">
+                  <h3 className="font-semibold text-foreground">Maandelijkse Kosten</h3>
+                  <InfoTooltip
+                    title="Nutsvoorzieningen"
+                    content="Voer de maandelijkse kosten voor water, gas, elektriciteit en VvE/condominium in. Dit helpt bij het berekenen van je netto cashflow."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="water_maandelijks" className="flex items-center gap-2">
+                      <Droplets className="w-4 h-4 text-blue-500" />
+                      Water (€/maand)
+                    </Label>
+                    <Input
+                      id="water_maandelijks"
+                      type="number"
+                      min="0"
+                      value={formData.water_maandelijks || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, water_maandelijks: Number(e.target.value) })
+                      }
+                      placeholder="25"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gas_maandelijks" className="flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-orange-500" />
+                      Gas (€/maand)
+                    </Label>
+                    <Input
+                      id="gas_maandelijks"
+                      type="number"
+                      min="0"
+                      value={formData.gas_maandelijks || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, gas_maandelijks: Number(e.target.value) })
+                      }
+                      placeholder="40"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="elektriciteit_maandelijks" className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      Elektriciteit (€/maand)
+                    </Label>
+                    <Input
+                      id="elektriciteit_maandelijks"
+                      type="number"
+                      min="0"
+                      value={formData.elektriciteit_maandelijks || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, elektriciteit_maandelijks: Number(e.target.value) })
+                      }
+                      placeholder="60"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="condominium_maandelijks" className="flex items-center gap-2">
+                      <Home className="w-4 h-4 text-purple-500" />
+                      VvE/Condominium (€/maand)
+                    </Label>
+                    <Input
+                      id="condominium_maandelijks"
+                      type="number"
+                      min="0"
+                      value={formData.condominium_maandelijks || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, condominium_maandelijks: Number(e.target.value) })
+                      }
+                      placeholder="100"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="google_drive_link">Google Drive Link</Label>
+                <Label htmlFor="google_drive_link">
+                  Documentenkluis (Google Drive/OneDrive Link)
+                  <InfoTooltip
+                    title="Documentenkluis"
+                    content="Link naar een externe map met al je documenten voor dit pand: contracten, facturen, foto's, etc."
+                  />
+                </Label>
                 <Input
                   id="google_drive_link"
                   type="url"
