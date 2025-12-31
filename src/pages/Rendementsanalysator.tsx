@@ -251,7 +251,7 @@ export default function Rendementsanalysator() {
     <div className="space-y-1.5">
       <div className="flex items-center gap-1">
         <Label className="text-xs text-muted-foreground">{label}</Label>
-        {tooltip && <InfoTooltip content={tooltip} />}
+        {tooltip && <InfoTooltip title={label} content={tooltip} />}
       </div>
       <div className="relative">
         {prefix && (
@@ -362,7 +362,7 @@ export default function Rendementsanalysator() {
                   label="LTV (Loan-to-Value)"
                   value={inputs.ltv}
                   onChange={(v) => updateInput("ltv", v)}
-                  tooltip={metricExplanations.ltv.explanation}
+                  tooltip={metricExplanations.ltv?.explanation}
                   suffix="%"
                 />
                 <InputField
