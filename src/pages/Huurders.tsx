@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Users, Plus, Search, Phone, Mail, Star, Euro, Calendar, Building2, Layers } from "lucide-react";
+import { Users, Plus, Search, Phone, Mail, Star, Euro, Calendar, Building2, Layers, ExternalLink, DoorOpen, Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +29,15 @@ import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Tenant = Tables<"tenants">;
 type Property = Tables<"properties">;
+type Room = Tables<"rooms">;
 
 const Huurders = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -57,16 +61,19 @@ const Huurders = () => {
 
   const fetchData = async () => {
     try {
-      const [tenantsRes, propertiesRes] = await Promise.all([
+      const [tenantsRes, propertiesRes, roomsRes] = await Promise.all([
         supabase.from("tenants").select("*").order("created_at", { ascending: false }),
         supabase.from("properties").select("*").eq("gearchiveerd", false),
+        supabase.from("rooms").select("*"),
       ]);
 
       if (tenantsRes.error) throw tenantsRes.error;
       if (propertiesRes.error) throw propertiesRes.error;
+      if (roomsRes.error) throw roomsRes.error;
 
       setTenants(tenantsRes.data || []);
       setProperties(propertiesRes.data || []);
+      setRooms(roomsRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({
@@ -143,7 +150,34 @@ const Huurders = () => {
 
   const getPropertyUnits = (propertyId: string) => {
     const property = properties.find((p) => p.id === propertyId);
-    return (property as any)?.aantal_units || 1;
+    return property?.aantal_units || 1;
+  };
+
+  const getPropertyRooms = (propertyId: string) => {
+    return rooms.filter((r) => r.property_id === propertyId);
+  };
+
+  const getRoomName = (roomId: string | null) => {
+    if (!roomId) return null;
+    return rooms.find((r) => r.id === roomId)?.naam || null;
+  };
+
+  const getProperty = (propertyId: string) => {
+    return properties.find((p) => p.id === propertyId);
+  };
+
+  const handleEmailTenant = (tenant: Tenant) => {
+    if (!tenant.email) {
+      toast({
+        title: "Geen e-mailadres",
+        description: "Deze huurder heeft geen e-mailadres opgegeven.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const property = getProperty(tenant.property_id);
+    const subject = encodeURIComponent(`Betreft: ${property?.naam || 'Uw woning'}`);
+    window.open(`mailto:${tenant.email}?subject=${subject}`, '_blank');
   };
 
   const selectedPropertyUnits = formData.property_id ? getPropertyUnits(formData.property_id) : 1;
@@ -243,7 +277,12 @@ const Huurders = () => {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTenants.map((tenant, index) => (
+              {filteredTenants.map((tenant, index) => {
+                const property = getProperty(tenant.property_id);
+                const roomName = getRoomName(tenant.room_id);
+                const propertyRooms = getPropertyRooms(tenant.property_id);
+
+                return (
                 <div
                   key={tenant.id}
                   className="p-5 bg-card rounded-xl border shadow-card hover:shadow-glow transition-all duration-300 animate-slide-up"
@@ -267,17 +306,34 @@ const Huurders = () => {
                   </div>
 
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    {/* Property link */}
+                    <button
+                      onClick={() => navigate('/panden')}
+                      className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group w-full text-left"
+                    >
                       <Building2 className="w-4 h-4" />
-                      <span>
+                      <span className="flex-1 truncate">
                         {getPropertyName(tenant.property_id)}
-                        {getPropertyUnits(tenant.property_id) > 1 && (
-                          <span className="ml-1 text-primary">
-                            (Unit {(tenant as any).unit_nummer || 1})
-                          </span>
-                        )}
                       </span>
-                    </div>
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                    
+                    {/* Room info */}
+                    {roomName && (
+                      <div className="flex items-center gap-2 text-muted-foreground pl-6">
+                        <DoorOpen className="w-3 h-3" />
+                        <span>{roomName}</span>
+                      </div>
+                    )}
+                    
+                    {/* Unit info for multi-unit properties without rooms */}
+                    {!roomName && getPropertyUnits(tenant.property_id) > 1 && (
+                      <div className="flex items-center gap-2 text-muted-foreground pl-6">
+                        <Layers className="w-3 h-3" />
+                        <span>Unit {tenant.unit_nummer || 1}</span>
+                      </div>
+                    )}
+                    
                     {tenant.email && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Mail className="w-4 h-4" />
@@ -299,13 +355,27 @@ const Huurders = () => {
                         €{Number(tenant.huurbedrag).toLocaleString()}/mnd
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <Calendar className="w-4 h-4" />
-                      <span>Dag {tenant.betaaldag}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                        <Calendar className="w-3 h-3" />
+                        <span>Dag {tenant.betaaldag}</span>
+                      </div>
+                      {tenant.email && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-primary"
+                          onClick={() => handleEmailTenant(tenant)}
+                        >
+                          <Send className="w-3 h-3 mr-1" />
+                          Mail
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -335,14 +405,45 @@ const Huurders = () => {
                   {properties.map((property) => (
                     <SelectItem key={property.id} value={property.id}>
                       {property.naam} - {property.locatie}
-                      {(property as any).aantal_units > 1 && ` (${(property as any).aantal_units} units)`}
+                      {property.aantal_units > 1 && ` (${property.aantal_units} units)`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedPropertyUnits > 1 && (
+            {/* Room selection for kamerverhuur */}
+            {formData.property_id && getPropertyRooms(formData.property_id).length > 0 && (
+              <div className="space-y-2">
+                <Label>
+                  Kamer
+                  <InfoTooltip
+                    title="Kamerselectie"
+                    content="Selecteer de specifieke kamer binnen dit pand waar deze huurder woont."
+                  />
+                </Label>
+                <Select
+                  value={(formData as any).room_id || ""}
+                  onValueChange={(value) => setFormData({ ...formData, room_id: value || null } as any)}
+                >
+                  <SelectTrigger>
+                    <DoorOpen className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Selecteer kamer (optioneel)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Geen specifieke kamer</SelectItem>
+                    {getPropertyRooms(formData.property_id).map((room) => (
+                      <SelectItem key={room.id} value={room.id}>
+                        {room.naam} {room.oppervlakte_m2 ? `(${room.oppervlakte_m2}m²)` : ''} - €{room.huurprijs}/mnd
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Unit selection for multi-unit properties without rooms */}
+            {selectedPropertyUnits > 1 && formData.property_id && getPropertyRooms(formData.property_id).length === 0 && (
               <div className="space-y-2">
                 <Label htmlFor="unit_nummer">
                   Unit Nummer *

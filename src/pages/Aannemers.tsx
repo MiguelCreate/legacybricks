@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Wrench, Plus, Search, Mail, Phone, Building2, MoreVertical, Pencil, Trash2, Link2 } from "lucide-react";
+import { Wrench, Plus, Search, Mail, Phone, Building2, MoreVertical, Pencil, Trash2, Link2, Users, Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,14 @@ interface Property {
   locatie: string;
 }
 
+interface Tenant {
+  id: string;
+  naam: string;
+  email: string | null;
+  telefoon: string | null;
+  property_id: string;
+}
+
 interface PropertyContractor {
   property_id: string;
   contractor_id: string;
@@ -72,8 +81,10 @@ const werkzaamhedenTypes = [
 const Aannemers = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [propertyContractors, setPropertyContractors] = useState<PropertyContractor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,19 +110,22 @@ const Aannemers = () => {
 
   const fetchData = async () => {
     try {
-      const [contractorsRes, propertiesRes, linksRes] = await Promise.all([
+      const [contractorsRes, propertiesRes, linksRes, tenantsRes] = await Promise.all([
         supabase.from("contractors").select("*").order("bedrijfsnaam"),
         supabase.from("properties").select("id, naam, locatie").eq("gearchiveerd", false),
         supabase.from("property_contractors").select("property_id, contractor_id"),
+        supabase.from("tenants").select("id, naam, email, telefoon, property_id").eq("actief", true),
       ]);
 
       if (contractorsRes.error) throw contractorsRes.error;
       if (propertiesRes.error) throw propertiesRes.error;
       if (linksRes.error) throw linksRes.error;
+      if (tenantsRes.error) throw tenantsRes.error;
 
       setContractors(contractorsRes.data || []);
       setProperties(propertiesRes.data || []);
       setPropertyContractors(linksRes.data || []);
+      setTenants(tenantsRes.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({
@@ -249,6 +263,32 @@ const Aannemers = () => {
   const getLinkedProperties = (contractorId: string) => {
     const links = propertyContractors.filter((pc) => pc.contractor_id === contractorId);
     return properties.filter((p) => links.some((l) => l.property_id === p.id));
+  };
+
+  const getTenantsForProperties = (propertyIds: string[]) => {
+    return tenants.filter((t) => propertyIds.includes(t.property_id));
+  };
+
+  const handleEmailTenantWithContractor = (tenant: Tenant, contractor: Contractor) => {
+    if (!tenant.email) {
+      toast({
+        title: "Geen e-mailadres",
+        description: "Deze huurder heeft geen e-mailadres opgegeven.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const property = properties.find(p => p.id === tenant.property_id);
+    const subject = encodeURIComponent(`${contractor.type_werkzaamheden} - ${property?.naam || 'Uw woning'}`);
+    const body = encodeURIComponent(
+      `Beste ${tenant.naam},\n\nVoor ${contractor.type_werkzaamheden.toLowerCase()} werkzaamheden kunt u contact opnemen met:\n\n` +
+      `${contractor.bedrijfsnaam}\n` +
+      (contractor.contactpersoon ? `Contactpersoon: ${contractor.contactpersoon}\n` : '') +
+      (contractor.email ? `E-mail: ${contractor.email}\n` : '') +
+      (contractor.telefoon ? `Telefoon: ${contractor.telefoon}\n` : '') +
+      `\nMet vriendelijke groet`
+    );
+    window.open(`mailto:${tenant.email}?subject=${subject}&body=${body}`, '_blank');
   };
 
   const filteredContractors = contractors.filter(
@@ -393,18 +433,50 @@ const Aannemers = () => {
                     </div>
 
                     {linkedProps.length > 0 && (
-                      <div className="mt-4 pt-3 border-t">
-                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                          <Building2 className="w-3 h-3" />
-                          Gekoppelde panden:
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {linkedProps.map((p) => (
-                            <Badge key={p.id} variant="outline" className="text-xs">
-                              {p.naam}
-                            </Badge>
-                          ))}
+                      <div className="mt-4 pt-3 border-t space-y-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                            <Building2 className="w-3 h-3" />
+                            Gekoppelde panden:
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {linkedProps.map((p) => (
+                              <Badge 
+                                key={p.id} 
+                                variant="outline" 
+                                className="text-xs cursor-pointer hover:bg-accent"
+                                onClick={() => navigate('/panden')}
+                              >
+                                {p.naam}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
+                        
+                        {/* Huurders voor snelle communicatie */}
+                        {getTenantsForProperties(linkedProps.map(p => p.id)).length > 0 && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              Huurders contacteren:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {getTenantsForProperties(linkedProps.map(p => p.id)).slice(0, 3).map((t) => (
+                                <Button
+                                  key={t.id}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 px-2 text-xs gap-1"
+                                  onClick={() => handleEmailTenantWithContractor(t, contractor)}
+                                  disabled={!t.email}
+                                >
+                                  <Send className="w-3 h-3" />
+                                  {t.naam}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
