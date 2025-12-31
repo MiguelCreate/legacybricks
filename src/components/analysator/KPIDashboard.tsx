@@ -83,15 +83,8 @@ export function KPIDashboard({ analysis }: KPIDashboardProps) {
                   </span>
                   {explanation && (
                     <InfoTooltip 
-                      content={
-                        <div className="space-y-2 max-w-xs">
-                          <p className="font-medium">{explanation.title}</p>
-                          <p className="text-sm">{explanation.explanation}</p>
-                          <p className="text-sm text-muted-foreground italic">
-                            {explanation.importance}
-                          </p>
-                        </div>
-                      }
+                      title={explanation.title}
+                      content={`${explanation.explanation} ${explanation.importance}`}
                     />
                   )}
                 </div>

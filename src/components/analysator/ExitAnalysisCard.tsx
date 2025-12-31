@@ -25,6 +25,7 @@ export function ExitAnalysisCard({ exitAnalysis, years, ownCapital }: ExitAnalys
           <DoorOpen className="h-4 w-4 text-primary" />
           Exit Analyse (Jaar {years})
           <InfoTooltip 
+            title="Exit Analyse"
             content="Dit is wat je overhoudt als je het pand verkoopt na de gekozen periode, rekening houdend met waardegroei en resterende hypotheekschuld."
           />
         </CardTitle>
@@ -56,6 +57,7 @@ export function ExitAnalysisCard({ exitAnalysis, years, ownCapital }: ExitAnalys
               <DoorOpen className="h-4 w-4 text-green-500" />
               <span className="text-xs text-muted-foreground">Netto Exit</span>
               <InfoTooltip 
+                title="Netto Exit"
                 content="Dit is wat je overhoudt na verkoop en aflossing van de hypotheek. Dit is je echte winst bij verkoop."
               />
             </div>
@@ -69,6 +71,7 @@ export function ExitAnalysisCard({ exitAnalysis, years, ownCapital }: ExitAnalys
               <TrendingUp className="h-4 w-4 text-primary" />
               <span className="text-xs text-muted-foreground">Totaal Rendement</span>
               <InfoTooltip 
+                title="Totaal Rendement"
                 content="Cumulatieve cashflow + netto exit opbrengst. Dit is je totale winst over de hele periode."
               />
             </div>

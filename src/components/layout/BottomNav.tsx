@@ -1,4 +1,4 @@
-import { Home, Building2, Wallet, FileText, MoreHorizontal, Users, Target, Heart, Settings, ClipboardCheck } from "lucide-react";
+import { Home, Building2, Wallet, FileText, MoreHorizontal, Users, Target, Heart, Settings, ClipboardCheck, Calculator } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ const navItems = [
 
 const moreItems = [
   { icon: Users, label: "Huurders", path: "/huurders" },
+  { icon: Calculator, label: "Analysator", path: "/analysator" },
   { icon: Target, label: "Doelen", path: "/doelen" },
   { icon: Heart, label: "Legacy", path: "/legacy" },
   { icon: Settings, label: "Instellingen", path: "/instellingen" },
