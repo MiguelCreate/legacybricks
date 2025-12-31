@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Building2, Users, Euro, TrendingUp, Plus, Receipt, AlertTriangle, FileText } from "lucide-react";
+import { Building2, Users, Euro, TrendingUp, Plus, Receipt, AlertTriangle, FileText, Compass } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { WelcomeHeader } from "@/components/dashboard/WelcomeHeader";
@@ -9,7 +9,9 @@ import { QuickAction } from "@/components/ui/QuickAction";
 import { DailyMission } from "@/components/dashboard/DailyMission";
 import { StreakBanner } from "@/components/dashboard/StreakBanner";
 import { LegacyMantra } from "@/components/dashboard/LegacyMantra";
+import { CoPiloot } from "@/components/dashboard/CoPiloot";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateGrossYield, calculatePropertyCashflow } from "@/lib/financialCalculations";
@@ -19,6 +21,7 @@ type Property = Tables<"properties">;
 type Tenant = Tables<"tenants">;
 type Loan = Tables<"loans">;
 type Contract = Tables<"contracts">;
+type Profile = Tables<"profiles">;
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -28,12 +31,33 @@ const Dashboard = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [useCoPilot, setUseCoPilot] = useState<boolean | null>(null);
+  const [showCoPilot, setShowCoPilot] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchDashboardData();
+      fetchCoPilotPreference();
     }
   }, [user]);
+
+  const fetchCoPilotPreference = async () => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("co_pilot_standaard")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      
+      if (data) {
+        const preference = (data as any).co_pilot_standaard;
+        setUseCoPilot(preference !== false);
+        setShowCoPilot(preference !== false);
+      }
+    } catch (error) {
+      console.error("Error fetching co-pilot preference:", error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -184,6 +208,26 @@ const Dashboard = () => {
         <WelcomeHeader />
 
         <div className="px-4 md:px-6 lg:px-8 space-y-6 pb-8">
+          {/* Co-Piloot Section */}
+          {showCoPilot && (
+            <CoPiloot onSwitchToManual={() => setShowCoPilot(false)} />
+          )}
+
+          {/* Switch to Co-Piloot button when hidden */}
+          {!showCoPilot && (
+            <div className="flex justify-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowCoPilot(true)}
+                className="gap-2"
+              >
+                <Compass className="w-4 h-4" />
+                Gebruik Co-Piloot
+              </Button>
+            </div>
+          )}
+
           {/* Contract Warning */}
           {expiringContracts.length > 0 && (
             <div className="p-4 rounded-xl bg-warning/10 border border-warning/30 animate-fade-in">

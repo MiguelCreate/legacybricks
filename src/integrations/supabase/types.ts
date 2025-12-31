@@ -374,6 +374,7 @@ export type Database = {
           aow_maandelijks: number | null
           begeleiding_aan: boolean | null
           beleggingen: number | null
+          co_pilot_standaard: boolean | null
           created_at: string
           email: string
           erfgoed_mantra: string | null
@@ -392,6 +393,7 @@ export type Database = {
           aow_maandelijks?: number | null
           begeleiding_aan?: boolean | null
           beleggingen?: number | null
+          co_pilot_standaard?: boolean | null
           created_at?: string
           email: string
           erfgoed_mantra?: string | null
@@ -410,6 +412,7 @@ export type Database = {
           aow_maandelijks?: number | null
           begeleiding_aan?: boolean | null
           beleggingen?: number | null
+          co_pilot_standaard?: boolean | null
           created_at?: string
           email?: string
           erfgoed_mantra?: string | null

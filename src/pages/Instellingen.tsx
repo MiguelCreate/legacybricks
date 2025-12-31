@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, User, Bell, Shield, Moon, Sun, LogOut, HelpCircle, Save } from "lucide-react";
+import { Settings, User, Bell, Shield, Moon, Sun, LogOut, HelpCircle, Save, Compass } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ const Instellingen = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<Partial<Profile>>({
+  const [profile, setProfile] = useState<Partial<Profile> & { co_pilot_standaard?: boolean }>({
     naam: "",
     email: "",
     huidige_leeftijd: null,
@@ -28,6 +28,7 @@ const Instellingen = () => {
     spaargeld: null,
     begeleiding_aan: true,
     erfgoed_mantra: "",
+    co_pilot_standaard: true,
   });
 
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -73,7 +74,8 @@ const Instellingen = () => {
           spaargeld: profile.spaargeld,
           begeleiding_aan: profile.begeleiding_aan,
           erfgoed_mantra: profile.erfgoed_mantra,
-        })
+          co_pilot_standaard: profile.co_pilot_standaard,
+        } as any)
         .eq("user_id", user.id);
 
       if (error) throw error;
@@ -278,6 +280,28 @@ const Instellingen = () => {
             </div>
 
             <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Compass className="w-4 h-4" />
+                    <Label>Vastgoed Co-Piloot als standaard</Label>
+                    <InfoTooltip
+                      title="Co-Piloot Modus"
+                      content="Wanneer actief, opent het dashboard met de interactieve Co-Piloot dropdown waarmee je snel acties kunt kiezen."
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Toon de Co-Piloot assistent op het dashboard
+                  </p>
+                </div>
+                <Switch
+                  checked={profile.co_pilot_standaard !== false}
+                  onCheckedChange={(checked) =>
+                    setProfile({ ...profile, co_pilot_standaard: checked })
+                  }
+                />
+              </div>
+
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
