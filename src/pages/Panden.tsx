@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { Building2, Plus, Search, Filter, MapPin, Euro, Users, MoreVertical, Star, Pencil, Trash2, Archive, AlertTriangle, Droplets, Flame, Zap, Home, Layers, ExternalLink, Calendar, Clock, DoorOpen, BedDouble, Percent, Sparkles } from "lucide-react";
+import { Building2, Plus, Search, Filter, MapPin, Euro, Users, MoreVertical, Star, Pencil, Trash2, Archive, AlertTriangle, Droplets, Flame, Zap, Home, Layers, ExternalLink, Calendar, Clock, DoorOpen, BedDouble, Percent, Sparkles, Map } from "lucide-react";
+import { PropertyMap } from "@/components/panden/PropertyMap";
+import { RoomManager } from "@/components/panden/RoomManager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -450,8 +453,33 @@ const Panden = () => {
           </div>
         </header>
 
-        {/* Properties Grid */}
+        {/* Map & Properties Grid */}
         <div className="px-4 md:px-6 lg:px-8 pb-8">
+          <Tabs defaultValue="grid" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="grid" className="gap-2">
+                <Building2 className="w-4 h-4" />
+                Overzicht
+              </TabsTrigger>
+              <TabsTrigger value="map" className="gap-2">
+                <Map className="w-4 h-4" />
+                Kaart
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="map" className="mt-0">
+              <div className="h-[500px] rounded-xl overflow-hidden border shadow-card">
+                <PropertyMap
+                  properties={filteredProperties}
+                  onPropertyClick={(p) => {
+                    const fullProperty = properties.find(prop => prop.id === p.id);
+                    if (fullProperty) handleEdit(fullProperty);
+                  }}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="grid" className="mt-0">
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
@@ -683,6 +711,8 @@ const Panden = () => {
               })}
             </div>
           )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 

@@ -25,24 +25,24 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-interface Property {
+interface PropertyBase {
   id: string;
   naam: string;
   locatie: string;
   status: string;
-  maandelijkse_huur?: number;
+  maandelijkse_huur?: number | null;
   aantal_units?: number;
-  gezondheidsscore?: number;
+  gezondheidsscore?: number | null;
 }
 
-interface PropertyWithCoords extends Property {
+interface PropertyWithCoords extends PropertyBase {
   lat: number;
   lng: number;
 }
 
 interface PropertyMapProps {
-  properties: Property[];
-  onPropertyClick?: (propertyId: string) => void;
+  properties: PropertyBase[];
+  onPropertyClick?: (property: PropertyBase) => void;
 }
 
 // Component to fit bounds
@@ -196,7 +196,7 @@ export const PropertyMap = ({ properties, onPropertyClick }: PropertyMapProps) =
                   <Button
                     size="sm"
                     className="w-full mt-2"
-                    onClick={() => onPropertyClick(property.id)}
+                    onClick={() => onPropertyClick(property)}
                   >
                     Bekijk pand
                   </Button>
