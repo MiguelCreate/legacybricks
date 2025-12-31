@@ -10,6 +10,7 @@ import { DailyMission } from "@/components/dashboard/DailyMission";
 import { StreakBanner } from "@/components/dashboard/StreakBanner";
 import { LegacyMantra } from "@/components/dashboard/LegacyMantra";
 import { CoPiloot } from "@/components/dashboard/CoPiloot";
+import { RentalIncomeChart } from "@/components/dashboard/RentalIncomeChart";
 import { WelcomeOnboarding } from "@/components/dashboard/WelcomeOnboarding";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { Button } from "@/components/ui/button";
@@ -326,43 +327,48 @@ const Dashboard = () => {
           {/* Main Content Grid */}
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Properties Section */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-foreground">Mijn Panden</h2>
-                  <InfoTooltip
-                    title="Panden Overzicht"
-                    content="Hier zie je je panden met hun huidige status en gezondheidsscore. Gepinde panden verschijnen eerst."
-                  />
-                </div>
-                <button 
-                  onClick={() => navigate("/panden")}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Bekijk alle →
-                </button>
-              </div>
+            <div className="lg:col-span-2 space-y-6">
+              {/* Rental Income Chart */}
+              <RentalIncomeChart />
 
-              {topProperties.length === 0 ? (
-                <div className="text-center py-12 bg-card rounded-xl border">
-                  <Building2 className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                  <p className="text-muted-foreground mb-4">Nog geen panden toegevoegd</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold text-foreground">Mijn Panden</h2>
+                    <InfoTooltip
+                      title="Panden Overzicht"
+                      content="Hier zie je je panden met hun huidige status en gezondheidsscore. Gepinde panden verschijnen eerst."
+                    />
+                  </div>
                   <button 
                     onClick={() => navigate("/panden")}
-                    className="text-primary hover:underline"
+                    className="text-sm text-primary hover:underline"
                   >
-                    Voeg je eerste pand toe →
+                    Bekijk alle →
                   </button>
                 </div>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {topProperties.map((property, index) => (
-                    <div key={property.id} style={{ animationDelay: `${0.3 + index * 0.1}s` }}>
-                      <PropertyCard {...property} />
-                    </div>
-                  ))}
-                </div>
-              )}
+
+                {topProperties.length === 0 ? (
+                  <div className="text-center py-12 bg-card rounded-xl border">
+                    <Building2 className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-muted-foreground mb-4">Nog geen panden toegevoegd</p>
+                    <button 
+                      onClick={() => navigate("/panden")}
+                      className="text-primary hover:underline"
+                    >
+                      Voeg je eerste pand toe →
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {topProperties.map((property, index) => (
+                      <div key={property.id} style={{ animationDelay: `${0.3 + index * 0.1}s` }}>
+                        <PropertyCard {...property} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Sidebar Content */}
