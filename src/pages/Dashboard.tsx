@@ -11,6 +11,7 @@ import { StreakBanner } from "@/components/dashboard/StreakBanner";
 import { LegacyMantra } from "@/components/dashboard/LegacyMantra";
 import { CoPiloot } from "@/components/dashboard/CoPiloot";
 import { RentalIncomeChart } from "@/components/dashboard/RentalIncomeChart";
+import { CashflowChart } from "@/components/dashboard/CashflowChart";
 import { WelcomeOnboarding } from "@/components/dashboard/WelcomeOnboarding";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { Button } from "@/components/ui/button";
@@ -328,8 +329,11 @@ const Dashboard = () => {
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Properties Section */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Rental Income Chart */}
-              <RentalIncomeChart />
+              {/* Charts Grid */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <RentalIncomeChart />
+                <CashflowChart />
+              </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
