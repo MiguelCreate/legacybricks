@@ -378,6 +378,50 @@ export type Database = {
           },
         ]
       }
+      milestones: {
+        Row: {
+          beschrijving: string | null
+          celebrated: boolean | null
+          created_at: string
+          datum: string
+          id: string
+          property_id: string | null
+          titel: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          beschrijving?: string | null
+          celebrated?: boolean | null
+          created_at?: string
+          datum: string
+          id?: string
+          property_id?: string | null
+          titel: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          beschrijving?: string | null
+          celebrated?: boolean | null
+          created_at?: string
+          datum?: string
+          id?: string
+          property_id?: string | null
+          titel?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           categorie: Database["public"]["Enums"]["note_category"]
@@ -466,6 +510,7 @@ export type Database = {
           co_pilot_standaard: boolean | null
           created_at: string
           email: string
+          erfgoed_level: number | null
           erfgoed_mantra: string | null
           gewenst_maandinkomen: number | null
           gewenste_pensioenleeftijd: number | null
@@ -473,11 +518,16 @@ export type Database = {
           id: string
           naam: string
           overige_inkomsten: number | null
+          overige_pot_sneeuwbal: number | null
           pensioen_maandelijks: number | null
+          salaris_inleg_sneeuwbal: number | null
           spaargeld: number | null
+          stilte_modus_aan: boolean | null
           toon_uitleg: boolean | null
+          totaal_badges: Json | null
           updated_at: string
           user_id: string
+          vrijheidskosten_maand: number | null
         }
         Insert: {
           aow_maandelijks?: number | null
@@ -486,6 +536,7 @@ export type Database = {
           co_pilot_standaard?: boolean | null
           created_at?: string
           email: string
+          erfgoed_level?: number | null
           erfgoed_mantra?: string | null
           gewenst_maandinkomen?: number | null
           gewenste_pensioenleeftijd?: number | null
@@ -493,11 +544,16 @@ export type Database = {
           id?: string
           naam: string
           overige_inkomsten?: number | null
+          overige_pot_sneeuwbal?: number | null
           pensioen_maandelijks?: number | null
+          salaris_inleg_sneeuwbal?: number | null
           spaargeld?: number | null
+          stilte_modus_aan?: boolean | null
           toon_uitleg?: boolean | null
+          totaal_badges?: Json | null
           updated_at?: string
           user_id: string
+          vrijheidskosten_maand?: number | null
         }
         Update: {
           aow_maandelijks?: number | null
@@ -506,6 +562,7 @@ export type Database = {
           co_pilot_standaard?: boolean | null
           created_at?: string
           email?: string
+          erfgoed_level?: number | null
           erfgoed_mantra?: string | null
           gewenst_maandinkomen?: number | null
           gewenste_pensioenleeftijd?: number | null
@@ -513,11 +570,16 @@ export type Database = {
           id?: string
           naam?: string
           overige_inkomsten?: number | null
+          overige_pot_sneeuwbal?: number | null
           pensioen_maandelijks?: number | null
+          salaris_inleg_sneeuwbal?: number | null
           spaargeld?: number | null
+          stilte_modus_aan?: boolean | null
           toon_uitleg?: boolean | null
+          totaal_badges?: Json | null
           updated_at?: string
           user_id?: string
+          vrijheidskosten_maand?: number | null
         }
         Relationships: []
       }
@@ -535,6 +597,7 @@ export type Database = {
           energie_vervaldatum: string | null
           energielabel: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding: string | null
+          foto_url: string | null
           gas_maandelijks: number | null
           gearchiveerd: boolean | null
           gerelateerd_doel_id: string | null
@@ -556,6 +619,7 @@ export type Database = {
           notaris_kosten: number | null
           onderhoud_jaarlijks: number | null
           oppervlakte_m2: number | null
+          persoonlijke_quote: string | null
           renovatie_kosten: number | null
           risico_fiscaal: number | null
           risico_fysiek: number | null
@@ -593,6 +657,7 @@ export type Database = {
           energie_vervaldatum?: string | null
           energielabel?: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding?: string | null
+          foto_url?: string | null
           gas_maandelijks?: number | null
           gearchiveerd?: boolean | null
           gerelateerd_doel_id?: string | null
@@ -614,6 +679,7 @@ export type Database = {
           notaris_kosten?: number | null
           onderhoud_jaarlijks?: number | null
           oppervlakte_m2?: number | null
+          persoonlijke_quote?: string | null
           renovatie_kosten?: number | null
           risico_fiscaal?: number | null
           risico_fysiek?: number | null
@@ -651,6 +717,7 @@ export type Database = {
           energie_vervaldatum?: string | null
           energielabel?: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding?: string | null
+          foto_url?: string | null
           gas_maandelijks?: number | null
           gearchiveerd?: boolean | null
           gerelateerd_doel_id?: string | null
@@ -672,6 +739,7 @@ export type Database = {
           notaris_kosten?: number | null
           onderhoud_jaarlijks?: number | null
           oppervlakte_m2?: number | null
+          persoonlijke_quote?: string | null
           renovatie_kosten?: number | null
           risico_fiscaal?: number | null
           risico_fysiek?: number | null
