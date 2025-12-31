@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Euro, TrendingUp, TrendingDown, Plus, Receipt, PiggyBank, BarChart3, Trash2 } from "lucide-react";
+import { Euro, TrendingUp, TrendingDown, Plus, Receipt, PiggyBank, BarChart3, Trash2, Landmark } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert, Enums } from "@/integrations/supabase/types";
+import { HypotheekDialog } from "@/components/financien/HypotheekDialog";
 
 type Expense = Tables<"expenses">;
 type Payment = Tables<"payments">;
@@ -65,6 +66,7 @@ const Financien = () => {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const [isHypotheekDialogOpen, setIsHypotheekDialogOpen] = useState(false);
 
   const [paymentForm, setPaymentForm] = useState({
     tenant_id: "",
@@ -271,7 +273,15 @@ const Financien = () => {
                 Overzicht van je vastgoedinkomsten en -uitgaven
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsHypotheekDialogOpen(true)}
+                className="gap-2"
+              >
+                <Landmark className="w-4 h-4" />
+                Hypotheek
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setIsExpenseDialogOpen(true)}
@@ -648,6 +658,15 @@ const Financien = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Hypotheek Dialog */}
+      <HypotheekDialog
+        open={isHypotheekDialogOpen}
+        onOpenChange={setIsHypotheekDialogOpen}
+        properties={properties}
+        loans={loans}
+        onSuccess={fetchData}
+      />
     </AppLayout>
   );
 };
