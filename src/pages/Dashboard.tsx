@@ -14,6 +14,10 @@ import { RentalIncomeChart } from "@/components/dashboard/RentalIncomeChart";
 import { CashflowChart } from "@/components/dashboard/CashflowChart";
 import { WelcomeOnboarding } from "@/components/dashboard/WelcomeOnboarding";
 import { ShortTermRentalOverview } from "@/components/dashboard/ShortTermRentalOverview";
+import { StilteModus } from "@/components/dashboard/StilteModus";
+import { VrijheidsDashboard } from "@/components/dashboard/VrijheidsDashboard";
+import { GamificationBanner } from "@/components/dashboard/GamificationBanner";
+import { AudioSamenvatting } from "@/components/dashboard/AudioSamenvatting";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +29,12 @@ type Property = Tables<"properties">;
 type Tenant = Tables<"tenants">;
 type Loan = Tables<"loans">;
 type Contract = Tables<"contracts">;
-type Profile = Tables<"profiles">;
+type Profile = Tables<"profiles"> & {
+  stilte_modus_aan?: boolean;
+  vrijheidskosten_maand?: number;
+  erfgoed_level?: number;
+  totaal_badges?: any[];
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -35,9 +44,11 @@ const Dashboard = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [useCoPilot, setUseCoPilot] = useState<boolean | null>(null);
   const [showCoPilot, setShowCoPilot] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [stilteModusAan, setStilteModusAan] = useState(false);
 
   useEffect(() => {
     // Check if user has seen onboarding
@@ -58,17 +69,19 @@ const Dashboard = () => {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("co_pilot_standaard")
+        .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
       
       if (data) {
-        const preference = (data as any).co_pilot_standaard;
-        setUseCoPilot(preference !== false);
-        setShowCoPilot(preference !== false);
+        const profileData = data as any;
+        setProfile(profileData);
+        setUseCoPilot(profileData.co_pilot_standaard !== false);
+        setShowCoPilot(profileData.co_pilot_standaard !== false);
+        setStilteModusAan(profileData.stilte_modus_aan === true);
       }
     } catch (error) {
-      console.error("Error fetching co-pilot preference:", error);
+      console.error("Error fetching profile:", error);
     }
   };
 
@@ -99,6 +112,8 @@ const Dashboard = () => {
 
   // Calculate statistics
   const totalPortfolioValue = properties.reduce((sum, p) => sum + Number(p.waardering || p.aankoopprijs), 0);
+  const totalDebt = loans.reduce((sum, l) => sum + Number(l.restschuld || l.hoofdsom || 0), 0);
+  const nettoVermogen = totalPortfolioValue - totalDebt;
   
   // Total monthly rental income from all active tenants
   const totalMonthlyRent = tenants.reduce((sum, t) => sum + Number(t.huurbedrag), 0);
@@ -122,6 +137,8 @@ const Dashboard = () => {
   };
 
   const monthlyCashflow = calculateMonthlyCashflow();
+  const vrijheidskosten = (profile as any)?.vrijheidskosten_maand || 2500;
+  const vrijheidMaanden = vrijheidskosten > 0 ? nettoVermogen / vrijheidskosten : 0;
 
   const verhuurdeProperties = properties.filter((p) => p.status === "verhuur");
   const bezettingsgraad = properties.length > 0 
@@ -238,6 +255,34 @@ const Dashboard = () => {
         <WelcomeHeader />
 
         <div className="px-4 md:px-6 lg:px-8 space-y-6 pb-8">
+          {/* Stilte-Modus */}
+          <StilteModus 
+            vrijheidMaanden={vrijheidMaanden}
+            isEnabled={stilteModusAan}
+            onToggle={setStilteModusAan}
+          />
+
+          {/* Als Stilte-Modus aan is, toon alleen rust */}
+          {stilteModusAan ? null : (
+            <>
+          {/* Gamification Banner */}
+          <GamificationBanner
+            erfgoedLevel={(profile as any)?.erfgoed_level || 1}
+            totaalPanden={properties.length}
+            schuldenvrij={properties.filter(p => !loans.find(l => l.property_id === p.id && Number(l.restschuld) > 0)).length}
+            doelenBehaald={0}
+            badges={(profile as any)?.totaal_badges || []}
+          />
+
+          {/* Audio Samenvatting */}
+          <div className="flex justify-end">
+            <AudioSamenvatting
+              nettoVermogen={nettoVermogen}
+              maandelijkseCashflow={monthlyCashflow}
+              openActies={expiringContracts.length}
+            />
+          </div>
+
           {/* Co-Piloot Section */}
           {showCoPilot && (
             <CoPiloot onSwitchToManual={() => setShowCoPilot(false)} />
@@ -381,10 +426,18 @@ const Dashboard = () => {
 
             {/* Sidebar Content */}
             <div className="space-y-6">
+              {/* Vrijheidsdashboard */}
+              <VrijheidsDashboard
+                nettoVermogen={nettoVermogen}
+                maandelijkseKosten={vrijheidskosten}
+                maandelijkseCashflow={monthlyCashflow}
+              />
               <DailyMission />
               <LegacyMantra />
             </div>
           </div>
+          </>
+          )}
         </div>
       </div>
     </AppLayout>
