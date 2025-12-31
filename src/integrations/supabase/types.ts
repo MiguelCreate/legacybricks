@@ -434,11 +434,14 @@ export type Database = {
           aankoopdatum: string | null
           aankoopprijs: number
           beheerkosten_percentage: number | null
+          condominium_maandelijks: number | null
           created_at: string
           eigen_inleg: number | null
+          elektriciteit_maandelijks: number | null
           energie_vervaldatum: string | null
           energielabel: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding: string | null
+          gas_maandelijks: number | null
           gearchiveerd: boolean | null
           gezondheidsscore: number | null
           google_drive_link: string | null
@@ -467,16 +470,20 @@ export type Database = {
           verzekering_jaarlijks: number | null
           waardering: number | null
           waarom_gekocht: string | null
+          water_maandelijks: number | null
         }
         Insert: {
           aankoopdatum?: string | null
           aankoopprijs: number
           beheerkosten_percentage?: number | null
+          condominium_maandelijks?: number | null
           created_at?: string
           eigen_inleg?: number | null
+          elektriciteit_maandelijks?: number | null
           energie_vervaldatum?: string | null
           energielabel?: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding?: string | null
+          gas_maandelijks?: number | null
           gearchiveerd?: boolean | null
           gezondheidsscore?: number | null
           google_drive_link?: string | null
@@ -505,16 +512,20 @@ export type Database = {
           verzekering_jaarlijks?: number | null
           waardering?: number | null
           waarom_gekocht?: string | null
+          water_maandelijks?: number | null
         }
         Update: {
           aankoopdatum?: string | null
           aankoopprijs?: number
           beheerkosten_percentage?: number | null
+          condominium_maandelijks?: number | null
           created_at?: string
           eigen_inleg?: number | null
+          elektriciteit_maandelijks?: number | null
           energie_vervaldatum?: string | null
           energielabel?: Database["public"]["Enums"]["energy_label"] | null
           familie_handleiding?: string | null
+          gas_maandelijks?: number | null
           gearchiveerd?: boolean | null
           gezondheidsscore?: number | null
           google_drive_link?: string | null
@@ -543,6 +554,7 @@ export type Database = {
           verzekering_jaarlijks?: number | null
           waardering?: number | null
           waarom_gekocht?: string | null
+          water_maandelijks?: number | null
         }
         Relationships: []
       }
