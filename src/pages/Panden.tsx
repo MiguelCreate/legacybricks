@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Building2, Plus, Search, Filter, MapPin, Euro, Users, MoreVertical, Star, Pencil, Trash2, Archive, AlertTriangle, Droplets, Flame, Zap, Home, Layers, ExternalLink, Calendar, Clock, DoorOpen, BedDouble, Percent, Sparkles, Map, Wrench, Eye, ArrowLeft } from "lucide-react";
 import { PropertyMap } from "@/components/panden/PropertyMap";
 import { RoomManager } from "@/components/panden/RoomManager";
@@ -68,6 +69,7 @@ const getHealthColor = (score: number | null) => {
 };
 
 const Panden = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -714,6 +716,17 @@ const Panden = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* Detail Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-4 gap-2"
+                      onClick={() => navigate(`/panden/${property.id}`)}
+                    >
+                      <Eye className="w-4 h-4" />
+                      Bekijk details
+                    </Button>
                   </div>
                 );
               })}

@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Panden from "./pages/Panden";
+import PandDetail from "./pages/PandDetail";
 import Huurders from "./pages/Huurders";
 import Financien from "./pages/Financien";
 import Instellingen from "./pages/Instellingen";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/panden" element={<ProtectedRoute><Panden /></ProtectedRoute>} />
+            <Route path="/panden/:id" element={<ProtectedRoute><PandDetail /></ProtectedRoute>} />
             <Route path="/huurders" element={<ProtectedRoute><Huurders /></ProtectedRoute>} />
             <Route path="/financien" element={<ProtectedRoute><Financien /></ProtectedRoute>} />
             <Route path="/doelen" element={<ProtectedRoute><Doelen /></ProtectedRoute>} />
