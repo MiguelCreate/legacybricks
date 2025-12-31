@@ -551,11 +551,19 @@ const Panden = () => {
                       )}
                       {propertyTenants.length > 0 && (
                         <div className="pt-2 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-primary" />
-                            <span className="text-xs text-muted-foreground">
-                              {propertyTenants.length} {propertyTenants.length === 1 ? 'huurder' : 'huurders'}
-                            </span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 text-primary" />
+                              <span className="text-xs text-muted-foreground">
+                                {propertyTenants.length} {propertyTenants.length === 1 ? 'huurder' : 'huurders'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Euro className="w-4 h-4 text-success" />
+                              <span className="font-semibold text-success">
+                                €{propertyTenants.reduce((sum, t) => sum + Number(t.huurbedrag), 0).toLocaleString()}/mnd
+                              </span>
+                            </div>
                           </div>
                           {propertyTenants.slice(0, 2).map((tenant) => (
                             <div key={tenant.id} className="flex items-center justify-between text-sm pl-6">
@@ -567,7 +575,7 @@ const Panden = () => {
                                   </span>
                                 )}
                               </span>
-                              <span className="text-success font-medium">
+                              <span className="text-muted-foreground">
                                 €{Number(tenant.huurbedrag).toLocaleString()}
                               </span>
                             </div>
