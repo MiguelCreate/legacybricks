@@ -16,6 +16,7 @@ import Instellingen from "./pages/Instellingen";
 import Doelen from "./pages/Doelen";
 import Sneeuwbal from "./pages/Sneeuwbal";
 import NettoVermogen from "./pages/NettoVermogen";
+import RenteOpRente from "./pages/RenteOpRente";
 import Pensioen from "./pages/Pensioen";
 import Contracten from "./pages/Contracten";
 import Legacy from "./pages/Legacy";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/doelen" element={<ProtectedRoute><Doelen /></ProtectedRoute>} />
               <Route path="/sneeuwbal" element={<ProtectedRoute><Sneeuwbal /></ProtectedRoute>} />
               <Route path="/vermogen" element={<ProtectedRoute><NettoVermogen /></ProtectedRoute>} />
+              <Route path="/rente-op-rente" element={<ProtectedRoute><RenteOpRente /></ProtectedRoute>} />
               <Route path="/pensioen" element={<ProtectedRoute><Pensioen /></ProtectedRoute>} />
               <Route path="/contracten" element={<ProtectedRoute><Contracten /></ProtectedRoute>} />
               <Route path="/legacy" element={<ProtectedRoute><Legacy /></ProtectedRoute>} />
