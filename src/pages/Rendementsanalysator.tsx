@@ -119,12 +119,13 @@ const InputField = ({
         </span>
       )}
       <Input
-        type="number"
+        type="text"
         inputMode="decimal"
-        value={value === 0 ? "0" : (value ?? "")}
+        value={String(value)}
         onChange={(e) => {
-          const val = e.target.value;
-          onChange(val === "" ? 0 : parseFloat(val) || 0);
+          const rawValue = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.');
+          const numValue = rawValue === '' ? 0 : parseFloat(rawValue);
+          onChange(isNaN(numValue) ? 0 : numValue);
         }}
         className={`h-12 sm:h-9 text-base sm:text-sm ${prefix ? 'pl-8 sm:pl-7' : ''} ${suffix ? 'pr-14 sm:pr-12' : ''}`}
       />
