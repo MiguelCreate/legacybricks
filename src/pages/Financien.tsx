@@ -426,9 +426,6 @@ const Financien = () => {
           {/* Mode Toggle */}
           <FinancienModeToggle mode={mode} onModeChange={handleModeChange} />
 
-          {/* Tax Summary - Always visible */}
-          <PortfolioTaxSummary properties={properties} />
-
           {mode === "beginner" ? (
             <BeginnerFinancienView
               totalMonthlyRent={totalMonthlyRent}
@@ -441,7 +438,7 @@ const Financien = () => {
           ) : (
             <>
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                 <StatCard
                   title="Maandelijkse Cashflow"
                   value={`€${netCashflow.toLocaleString()}`}
@@ -483,7 +480,21 @@ const Financien = () => {
                     content: "Jaarlijkse huurinkomsten gedeeld door de totale waarde van je portefeuille. Geeft aan hoe efficiënt je investering is.",
                   }}
                 />
+                <StatCard
+                  title="Netto Rendement"
+                  value={`${portfolioValue > 0 ? (((netCashflow * 12) / portfolioValue) * 100).toFixed(1) : 0}%`}
+                  subtitle="Na kosten"
+                  icon={<Percent className="w-5 h-5 text-success" />}
+                  variant="success"
+                  tooltip={{
+                    title: "Netto Rendement",
+                    content: "Jaarlijkse netto cashflow gedeeld door de totale waarde van je portefeuille. Dit is je werkelijke rendement na alle kosten.",
+                  }}
+                />
               </div>
+
+              {/* Tax Summary */}
+              <PortfolioTaxSummary properties={properties} />
 
               {/* Recent Transactions */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
