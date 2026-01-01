@@ -137,7 +137,9 @@ export interface AnalysisInputs {
   furnishingCosts: number;
   
   // Mortgage
+  mortgageInputType?: 'ltv' | 'downpayment'; // How user wants to input financing
   ltv: number; // percentage
+  downpayment?: number; // absolute amount in euros
   interestRate: number; // percentage
   loanTermYears: number;
   
@@ -247,7 +249,17 @@ export function analyzeInvestment(inputs: AnalysisInputs): InvestmentAnalysis {
   // Calculate total investment and financing
   const totalInvestment = inputs.purchasePrice + inputs.imt + inputs.notaryFees + 
                           inputs.renovationCosts + inputs.furnishingCosts;
-  const loanAmount = inputs.purchasePrice * (inputs.ltv / 100);
+  
+  // Calculate loan amount based on input type
+  let loanAmount: number;
+  if (inputs.mortgageInputType === 'downpayment' && inputs.downpayment !== undefined) {
+    // Downpayment mode: loan = purchase price - downpayment
+    loanAmount = Math.max(0, inputs.purchasePrice - inputs.downpayment);
+  } else {
+    // LTV mode (default): loan = purchase price * LTV%
+    loanAmount = inputs.purchasePrice * (inputs.ltv / 100);
+  }
+  
   const ownCapital = totalInvestment - loanAmount;
   
   // Calculate mortgage payment
