@@ -49,6 +49,7 @@ import { VisualCharts } from "@/components/analysator/VisualCharts";
 import { AnalysatorModeToggle } from "@/components/analysator/AnalysatorModeToggle";
 import { BeginnerAnalysatorView } from "@/components/analysator/BeginnerAnalysatorView";
 import { SavedPropertiesPanel } from "@/components/analysator/SavedPropertiesPanel";
+import { TaxCalculator } from "@/components/analysator/TaxCalculator";
 
 type TimeFrame = "5j" | "10j" | "15j" | "30j";
 
@@ -814,6 +815,12 @@ export default function Rendementsanalysator() {
                     />
                   </TabsContent>
                 </Tabs>
+                
+                {/* Tax Calculator */}
+                <TaxCalculator 
+                  inputs={inputs}
+                  propertyName={propertyName || "Nieuw Pand"}
+                />
                 
                 {/* Snowball Effect */}
                 <SnowballImpact
