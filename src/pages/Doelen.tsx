@@ -173,7 +173,58 @@ const Doelen = () => {
     const monthsToGoal = totalContribution > 0 ? Math.ceil(remaining / totalContribution) : null;
     const estimatedEndDate = monthsToGoal ? new Date(Date.now() + monthsToGoal * 30 * 24 * 60 * 60 * 1000) : null;
     
-    return { surplus, monthsToGoal, estimatedEndDate, conflictWarnings: [], riskLevel: "low" as const };
+    // Conflict detection
+    const conflictWarnings: string[] = [];
+    let riskLevel: "low" | "medium" | "high" = "low";
+    
+    const activeGoalsExcludingCurrent = goals.filter(g => !g.bereikt && g.id !== goal.id && !g.gepauzeerd);
+    
+    // Calculate total property surplus
+    const totalPropertySurplus = properties.reduce((sum, p) => sum + calculatePropertySurplus(p, loans), 0);
+    
+    // Calculate total commitments
+    const totalCommitments = activeGoalsExcludingCurrent.reduce((sum, g) => sum + Number(g.maandelijkse_inleg || 0), 0) + monthlyInleg;
+    
+    // Check commitment ratio
+    if (totalPropertySurplus > 0 && totalCommitments > totalPropertySurplus * 0.5) {
+      conflictWarnings.push("Je committeert meer dan 50% van je overschot aan doelen");
+      riskLevel = "medium";
+    }
+    if (totalPropertySurplus > 0 && totalCommitments > totalPropertySurplus * 0.8) {
+      conflictWarnings.push("Je committeert bijna al je overschot - let op je liquiditeit!");
+      riskLevel = "high";
+    }
+    
+    // Check for missing noodbuffer
+    const hasNoodbuffer = goals.some(g => g.doel_type === "noodbuffer" && (g.bereikt || Number(g.huidig_bedrag) >= Number(g.doelbedrag) * 0.5));
+    const isBuyingProperty = goal.doel_type === "eerste_pand" || goal.doel_type === "volgend_pand";
+    if (isBuyingProperty && !hasNoodbuffer) {
+      conflictWarnings.push("Tip: Zorg eerst voor een noodbuffer voordat je een pand koopt");
+    }
+    
+    // Check deadline
+    if (goal.eind_datum && estimatedEndDate) {
+      const targetDate = new Date(goal.eind_datum);
+      if (estimatedEndDate > targetDate) {
+        conflictWarnings.push("Huidige inleg haalt de deadline niet - verhoog je inleg");
+        riskLevel = "high";
+      }
+    }
+    
+    // Check for conflicting high-priority goals
+    const highPriorityGoals = activeGoalsExcludingCurrent.filter(g => g.prioriteit === "hoog");
+    if (goal.prioriteit === "hoog" && highPriorityGoals.length >= 2) {
+      conflictWarnings.push("Veel doelen met hoge prioriteit - overweeg te focussen");
+    }
+    
+    // Check for liquidity vs investment conflict
+    const hasLiquidityGoal = goals.some(g => (g.doel_type === "noodbuffer" || g.doel_type === "leegstand_buffer") && !g.bereikt);
+    const isInvestmentGoal = ["eerste_pand", "volgend_pand", "renovatie", "fire"].includes(goal.doel_type || "");
+    if (isInvestmentGoal && !hasLiquidityGoal && properties.length > 0) {
+      conflictWarnings.push("Overweeg eerst een buffer aan te leggen voor je investeert");
+    }
+    
+    return { surplus, monthsToGoal, estimatedEndDate, conflictWarnings, riskLevel };
   };
 
   const activeGoals = goals.filter(g => !g.bereikt);
@@ -238,6 +289,7 @@ const Doelen = () => {
                       onEdit={handleEdit}
                       onDelete={handleDelete}
                       onTogglePause={handleTogglePause}
+                      onScenario={setScenarioGoal}
                     />
                   );
                 })}

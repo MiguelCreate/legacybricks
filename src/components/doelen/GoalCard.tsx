@@ -1,6 +1,7 @@
 import { 
   Building2, TrendingUp, Calendar, Percent, Trash2, Edit, 
-  PauseCircle, PlayCircle, AlertTriangle, Clock, Wallet, Heart
+  PauseCircle, PlayCircle, AlertTriangle, Clock, Wallet, Heart,
+  Sliders, Flag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { GOAL_TYPES, GOAL_CATEGORIES, PRIORITY_OPTIONS } from "./goalTypes";
 import type { Tables } from "@/integrations/supabase/types";
-import { format } from "date-fns";
+import { format, differenceInDays, differenceInMonths } from "date-fns";
 import { nl } from "date-fns/locale";
 
 type Goal = Tables<"goals">;
@@ -25,6 +26,7 @@ interface GoalCardProps {
   onEdit: (goal: Goal) => void;
   onDelete: (goal: Goal) => void;
   onTogglePause: (goal: Goal) => void;
+  onScenario?: (goal: Goal) => void;
 }
 
 const getCategoryIcon = (categorie: string) => {
@@ -50,8 +52,35 @@ export const GoalCard = ({
   riskLevel,
   onEdit,
   onDelete,
+  onScenario,
   onTogglePause,
 }: GoalCardProps) => {
+  // Calculate timeline progress if we have start and end dates
+  const timelineProgress = (() => {
+    if (!goal.start_datum) return null;
+    const startDate = new Date(goal.start_datum);
+    const today = new Date();
+    
+    if (goal.eind_datum) {
+      const endDate = new Date(goal.eind_datum);
+      const totalDays = differenceInDays(endDate, startDate);
+      const elapsedDays = differenceInDays(today, startDate);
+      if (totalDays <= 0) return 100;
+      return Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+    } else if (estimatedEndDate) {
+      const totalDays = differenceInDays(estimatedEndDate, startDate);
+      const elapsedDays = differenceInDays(today, startDate);
+      if (totalDays <= 0) return 100;
+      return Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+    }
+    return null;
+  })();
+  
+  // Check if behind schedule
+  const isBehindSchedule = (() => {
+    if (!goal.eind_datum || !estimatedEndDate) return false;
+    return estimatedEndDate > new Date(goal.eind_datum);
+  })();
   const progress = (Number(goal.huidig_bedrag) / Number(goal.doelbedrag)) * 100;
   const linkedProperty = properties.find(p => p.id === goal.bron_property_id);
   
@@ -97,8 +126,39 @@ export const GoalCard = ({
         </div>
       </div>
 
-      {/* Progress bar */}
-      <Progress value={progress} className="h-3 mb-4" />
+      {/* Progress bar with timeline indicator */}
+      <div className="space-y-2 mb-4">
+        <Progress value={progress} className="h-3" />
+        
+        {/* Timeline progress bar */}
+        {timelineProgress !== null && (
+          <div className="relative">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span className="flex items-center gap-1">
+                <Flag className="w-3 h-3" />
+                Tijdlijn
+              </span>
+              <span className={isBehindSchedule ? "text-destructive font-medium" : ""}>
+                {timelineProgress.toFixed(0)}% verstreken
+              </span>
+            </div>
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all ${
+                  isBehindSchedule ? "bg-destructive" : 
+                  timelineProgress > progress ? "bg-warning" : "bg-success"
+                }`}
+                style={{ width: `${timelineProgress}%` }}
+              />
+            </div>
+            {isBehindSchedule && (
+              <p className="text-xs text-destructive mt-1">
+                ⚠️ Je loopt achter op schema
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Amount info */}
       <div className="flex items-center justify-between text-sm mb-4">
@@ -208,6 +268,16 @@ export const GoalCard = ({
         </div>
         
         <div className="flex gap-1">
+          {onScenario && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onScenario(goal)}
+              title="Scenario vergelijken"
+            >
+              <Sliders className="w-4 h-4 text-primary" />
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
