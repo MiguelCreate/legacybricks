@@ -327,10 +327,3 @@ const NettoVermogen = () => {
 };
 
 export default NettoVermogen;
-        </div>
-      </div>
-    </AppLayout>
-  );
-};
-
-export default NettoVermogen;
