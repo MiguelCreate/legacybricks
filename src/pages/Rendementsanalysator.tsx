@@ -335,6 +335,13 @@ export default function Rendementsanalysator() {
       return;
     }
     
+    // Map rental type to database values
+    const rentalTypeMap: Record<string, string> = {
+      longterm: "langdurig",
+      shortterm: "kortlopend",
+      mixed: "gemengd",
+    };
+    
     const { error } = await supabase.from("properties").insert({
       user_id: user.id,
       naam: propertyName,
@@ -347,7 +354,7 @@ export default function Rendementsanalysator() {
       maandelijkse_huur: inputs.monthlyRentLT,
       st_bezetting_percentage: inputs.stOccupancy,
       st_gemiddelde_dagprijs: inputs.stADR,
-      type_verhuur: inputs.rentalType,
+      type_verhuur: rentalTypeMap[inputs.rentalType] || "langdurig",
       beheerkosten_percentage: inputs.managementPercent,
       onderhoud_jaarlijks: inputs.maintenanceYearly,
       verzekering_jaarlijks: inputs.insuranceYearly,
