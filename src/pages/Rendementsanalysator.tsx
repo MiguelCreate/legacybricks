@@ -121,8 +121,11 @@ const InputField = ({
       <Input
         type="number"
         inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        value={value === 0 ? "0" : (value ?? "")}
+        onChange={(e) => {
+          const val = e.target.value;
+          onChange(val === "" ? 0 : parseFloat(val) || 0);
+        }}
         className={`h-12 sm:h-9 text-base sm:text-sm ${prefix ? 'pl-8 sm:pl-7' : ''} ${suffix ? 'pr-14 sm:pr-12' : ''}`}
       />
       {suffix && (
