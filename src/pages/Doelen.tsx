@@ -39,7 +39,15 @@ const Doelen = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [formData, setFormData] = useState<Partial<TablesInsert<"goals">>>({
+    naam: "",
+    doelbedrag: 0,
+    huidig_bedrag: 0,
+    bron_property_id: null,
+  });
+  const [editFormData, setEditFormData] = useState<Partial<TablesInsert<"goals">>>({
     naam: "",
     doelbedrag: 0,
     huidig_bedrag: 0,
@@ -114,26 +122,50 @@ const Doelen = () => {
     }
   };
 
-  const handleUpdateProgress = async (goal: Goal, newAmount: number) => {
+  const handleOpenEdit = (goal: Goal) => {
+    setEditingGoal(goal);
+    setEditFormData({
+      naam: goal.naam,
+      doelbedrag: Number(goal.doelbedrag),
+      huidig_bedrag: Number(goal.huidig_bedrag),
+      bron_property_id: goal.bron_property_id,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGoal) return;
+
     try {
-      const bereikt = newAmount >= Number(goal.doelbedrag);
+      const bereikt = Number(editFormData.huidig_bedrag) >= Number(editFormData.doelbedrag);
       const { error } = await supabase
         .from("goals")
-        .update({ 
-          huidig_bedrag: newAmount,
-          bereikt 
+        .update({
+          naam: editFormData.naam,
+          doelbedrag: editFormData.doelbedrag,
+          huidig_bedrag: editFormData.huidig_bedrag,
+          bron_property_id: editFormData.bron_property_id,
+          bereikt,
         })
-        .eq("id", goal.id);
+        .eq("id", editingGoal.id);
 
       if (error) throw error;
 
-      if (bereikt) {
+      if (bereikt && !editingGoal.bereikt) {
         toast({
           title: "🎉 Doel Bereikt!",
-          description: `Gefeliciteerd! Je hebt "${goal.naam}" bereikt!`,
+          description: `Gefeliciteerd! Je hebt "${editFormData.naam}" bereikt!`,
+        });
+      } else {
+        toast({
+          title: "Doel bijgewerkt",
+          description: "De wijzigingen zijn opgeslagen.",
         });
       }
 
+      setIsEditDialogOpen(false);
+      setEditingGoal(null);
       fetchData();
     } catch (error: any) {
       toast({
@@ -280,17 +312,9 @@ const Doelen = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            const newAmount = prompt(
-                              "Voer het nieuwe bedrag in:",
-                              goal.huidig_bedrag?.toString()
-                            );
-                            if (newAmount) {
-                              handleUpdateProgress(goal, Number(newAmount));
-                            }
-                          }}
+                          onClick={() => handleOpenEdit(goal)}
                         >
-                          Update
+                          Bewerken
                         </Button>
                       </div>
 
@@ -447,6 +471,109 @@ const Doelen = () => {
               </Button>
               <Button type="submit" className="flex-1 gradient-primary text-primary-foreground">
                 Toevoegen
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Goal Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Doel Bewerken</DialogTitle>
+            <DialogDescription>
+              Pas de gegevens van je doel aan
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleEditSubmit} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-naam">Doelnaam *</Label>
+              <Input
+                id="edit-naam"
+                value={editFormData.naam}
+                onChange={(e) => setEditFormData({ ...editFormData, naam: e.target.value })}
+                placeholder="bijv. Noodfonds, Nieuwe keuken"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-doelbedrag">
+                  Doelbedrag (€) *
+                </Label>
+                <Input
+                  id="edit-doelbedrag"
+                  type="number"
+                  min="0"
+                  value={editFormData.doelbedrag || ""}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, doelbedrag: Number(e.target.value) })
+                  }
+                  placeholder="10000"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-huidig_bedrag">Huidige stand (€)</Label>
+                <Input
+                  id="edit-huidig_bedrag"
+                  type="number"
+                  min="0"
+                  value={editFormData.huidig_bedrag || ""}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, huidig_bedrag: Number(e.target.value) })
+                  }
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                Bronpand (optioneel)
+                <InfoTooltip
+                  title="Bronpand"
+                  content="Koppel dit doel aan een pand. De app gebruikt dan de huurinkomsten om te berekenen wanneer je je doel bereikt."
+                />
+              </Label>
+              <Select
+                value={editFormData.bron_property_id || "none"}
+                onValueChange={(value) =>
+                  setEditFormData({
+                    ...editFormData,
+                    bron_property_id: value === "none" ? null : value,
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecteer een pand" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Geen pand gekoppeld</SelectItem>
+                  {properties.map((property) => (
+                    <SelectItem key={property.id} value={property.id}>
+                      {property.naam}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                className="flex-1"
+              >
+                Annuleren
+              </Button>
+              <Button type="submit" className="flex-1 gradient-primary text-primary-foreground">
+                Opslaan
               </Button>
             </div>
           </form>
