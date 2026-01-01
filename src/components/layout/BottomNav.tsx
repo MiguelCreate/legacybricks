@@ -1,28 +1,56 @@
-import { Home, Building2, Wallet, FileText, MoreHorizontal, Users, Target, Heart, Settings, ClipboardCheck, Calculator, Wrench, Building } from "lucide-react";
+import { 
+  Home, Building2, Wallet, MoreHorizontal, Users, Target, Heart, Settings, 
+  ClipboardCheck, Calculator, Wrench, Building, FileText, Snowflake, PiggyBank, Sunset, TrendingUp
+} from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 const navItems = [
   { icon: Home, label: "Dashboard", path: "/" },
   { icon: Building2, label: "Panden", path: "/panden" },
   { icon: Wallet, label: "Financiën", path: "/financien" },
-  { icon: FileText, label: "Contracten", path: "/contracten" },
 ];
 
-const moreItems = [
-  { icon: Users, label: "Huurders", path: "/huurders" },
-  { icon: Wrench, label: "Aannemers", path: "/aannemers" },
-  { icon: Building, label: "VvE Overzicht", path: "/vve" },
-  { icon: Calculator, label: "Analysator", path: "/analysator" },
-  { icon: Target, label: "Doelen", path: "/doelen" },
-  { icon: Heart, label: "Legacy", path: "/legacy" },
-  { icon: Settings, label: "Instellingen", path: "/instellingen" },
-  { icon: ClipboardCheck, label: "Inchecklijsten", path: "/inchecklijsten" },
+const moreGroups = [
+  {
+    label: "Vastgoed",
+    items: [
+      { icon: Users, label: "Huurders", path: "/huurders" },
+      { icon: Wrench, label: "Aannemers", path: "/aannemers" },
+      { icon: FileText, label: "Contracten", path: "/contracten" },
+      { icon: ClipboardCheck, label: "Inchecklijsten", path: "/inchecklijsten" },
+      { icon: Building, label: "VvE Overzicht", path: "/vve" },
+    ],
+  },
+  {
+    label: "Analyse",
+    items: [
+      { icon: Calculator, label: "Analysator", path: "/analysator" },
+    ],
+  },
+  {
+    label: "Vermogensopbouw",
+    items: [
+      { icon: Target, label: "Doelen", path: "/doelen" },
+      { icon: Snowflake, label: "Sneeuwbal", path: "/sneeuwbal" },
+      { icon: PiggyBank, label: "Vermogen", path: "/vermogen" },
+      { icon: Sunset, label: "Pensioen", path: "/pensioen" },
+      { icon: Heart, label: "Legacy", path: "/legacy" },
+    ],
+  },
+  {
+    label: "Overig",
+    items: [
+      { icon: Settings, label: "Instellingen", path: "/instellingen" },
+    ],
+  },
 ];
 
 export const BottomNav = () => {
@@ -30,7 +58,7 @@ export const BottomNav = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t md:hidden">
       <div className="flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -59,16 +87,33 @@ export const BottomNav = () => {
               <span className="text-[10px] font-medium">Meer</span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="glass-strong mb-2">
-            {moreItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <DropdownMenuItem key={item.path} onClick={() => navigate(item.path)}>
-                  <Icon className="w-4 h-4 mr-2" />
-                  {item.label}
-                </DropdownMenuItem>
-              );
-            })}
+          <DropdownMenuContent 
+            align="end" 
+            className="bg-popover border shadow-lg mb-2 w-56 max-h-[70vh] overflow-y-auto"
+            sideOffset={8}
+          >
+            {moreGroups.map((group, groupIndex) => (
+              <div key={group.label}>
+                {groupIndex > 0 && <DropdownMenuSeparator />}
+                <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider">
+                  {group.label}
+                </DropdownMenuLabel>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <DropdownMenuItem 
+                      key={item.path} 
+                      onClick={() => navigate(item.path)}
+                      className={isActive ? "bg-accent text-accent-foreground" : ""}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      {item.label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </div>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
