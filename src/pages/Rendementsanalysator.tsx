@@ -224,7 +224,9 @@ export default function Rendementsanalysator() {
     notaryFees: 3500,
     renovationCosts: 15000,
     furnishingCosts: 5000,
+    mortgageInputType: "ltv",
     ltv: 75,
+    downpayment: 62500, // 25% of 250000
     interestRate: 3.5,
     loanTermYears: 30,
     monthlyRentLT: 1200,
@@ -515,14 +517,50 @@ export default function Rendementsanalysator() {
             {/* Mortgage Section */}
             <InputSection title="Hypotheek" sectionKey="mortgage" icon={PiggyBank} stepNumber={2} expandedSections={expandedSections} toggleSection={toggleSection}>
               <div className="grid gap-3">
-                <InputField
-                  label="LTV (Loan-to-Value)"
-                  value={inputs.ltv}
-                  onChange={(v) => updateInput("ltv", v)}
-                  tooltip="Hoeveel % je leent van de aankoopprijs. 75% LTV = je betaalt 25% zelf."
-                  suffix="%"
-                  hint="Banken geven vaak max 70-80%"
-                />
+                <div className="space-y-1.5 sm:space-y-1">
+                  <Label className="text-sm sm:text-xs text-muted-foreground">Financieringswijze</Label>
+                  <Select 
+                    value={inputs.mortgageInputType || "ltv"} 
+                    onValueChange={(v) => updateInput("mortgageInputType", v)}
+                  >
+                    <SelectTrigger className="h-12 sm:h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ltv">LTV percentage (%)</SelectItem>
+                      <SelectItem value="downpayment">Downpayment bedrag (€)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs sm:text-[10px] text-muted-foreground">
+                    Kies hoe je de financiering wilt invoeren
+                  </p>
+                </div>
+
+                {(inputs.mortgageInputType || "ltv") === "ltv" ? (
+                  <InputField
+                    label="LTV (Loan-to-Value)"
+                    value={inputs.ltv}
+                    onChange={(v) => updateInput("ltv", v)}
+                    tooltip="Hoeveel % je leent van de aankoopprijs. 75% LTV = je betaalt 25% zelf."
+                    suffix="%"
+                    hint="Banken geven vaak max 70-80%"
+                  />
+                ) : (
+                  <InputField
+                    label="Downpayment (eigen inleg)"
+                    value={inputs.downpayment || 0}
+                    onChange={(v) => {
+                      updateInput("downpayment", v);
+                      // Calculate LTV from downpayment
+                      const loanAmount = inputs.purchasePrice - v;
+                      const ltv = inputs.purchasePrice > 0 ? (loanAmount / inputs.purchasePrice) * 100 : 0;
+                      updateInput("ltv", Math.max(0, Math.min(100, ltv)));
+                    }}
+                    prefix="€"
+                    hint={`Hypotheekbedrag: €${Math.max(0, inputs.purchasePrice - (inputs.downpayment || 0)).toLocaleString('nl-NL')}`}
+                  />
+                )}
+                
                 <InputField
                   label="Rente"
                   value={inputs.interestRate}
