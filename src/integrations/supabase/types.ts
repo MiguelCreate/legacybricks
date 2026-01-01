@@ -969,6 +969,7 @@ export type Database = {
           property_id: string
           room_id: string | null
           telefoon: string | null
+          unit_naam: string | null
           unit_nummer: number
           updated_at: string
         }
@@ -985,6 +986,7 @@ export type Database = {
           property_id: string
           room_id?: string | null
           telefoon?: string | null
+          unit_naam?: string | null
           unit_nummer?: number
           updated_at?: string
         }
@@ -1001,6 +1003,7 @@ export type Database = {
           property_id?: string
           room_id?: string | null
           telefoon?: string | null
+          unit_naam?: string | null
           unit_nummer?: number
           updated_at?: string
         }

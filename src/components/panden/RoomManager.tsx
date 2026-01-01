@@ -48,6 +48,7 @@ interface Tenant {
   huurbedrag: number;
   room_id: string | null;
   unit_nummer: number;
+  unit_naam: string | null;
   betaaldag: number;
 }
 
@@ -73,6 +74,7 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
   });
   const [unitFormData, setUnitFormData] = useState({
     naam: "",
+    unit_naam: "",
     huurbedrag: "",
     unit_nummer: "",
     betaaldag: "1",
@@ -93,7 +95,7 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
           .order("naam"),
         supabase
           .from("tenants")
-          .select("id, naam, huurbedrag, room_id, unit_nummer, betaaldag")
+          .select("id, naam, huurbedrag, room_id, unit_nummer, unit_naam, betaaldag")
           .eq("property_id", propertyId)
           .eq("actief", true),
       ]);
@@ -181,6 +183,7 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
     setEditingUnit(null);
     setUnitFormData({
       naam: "",
+      unit_naam: "",
       huurbedrag: "",
       unit_nummer: "",
       betaaldag: "1",
@@ -194,6 +197,7 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
       const unitData = {
         property_id: propertyId,
         naam: unitFormData.naam,
+        unit_naam: unitFormData.unit_naam || null,
         huurbedrag: parseFloat(unitFormData.huurbedrag) || 0,
         unit_nummer: parseInt(unitFormData.unit_nummer) || 1,
         betaaldag: parseInt(unitFormData.betaaldag) || 1,
@@ -226,6 +230,7 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
     setEditingUnit(tenant);
     setUnitFormData({
       naam: tenant.naam,
+      unit_naam: tenant.unit_naam || "",
       huurbedrag: tenant.huurbedrag.toString(),
       unit_nummer: tenant.unit_nummer.toString(),
       betaaldag: tenant.betaaldag.toString(),
@@ -421,9 +426,9 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
                     <Home className="w-4 h-4 text-success" />
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{tenant.naam}</p>
+                    <p className="font-medium text-sm">{tenant.unit_naam || `Unit ${tenant.unit_nummer}`}</p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>Unit {tenant.unit_nummer}</span>
+                      <span>{tenant.naam}</span>
                       <span>•</span>
                       <span className="text-success">€{Number(tenant.huurbedrag).toLocaleString()}/mnd</span>
                     </div>
@@ -537,9 +542,20 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
 
           <form onSubmit={handleUnitSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="unit_naam">Naam huurder *</Label>
+              <Label htmlFor="unit_naam_field">Unit naam *</Label>
               <Input
-                id="unit_naam"
+                id="unit_naam_field"
+                value={unitFormData.unit_naam}
+                onChange={(e) => setUnitFormData({ ...unitFormData, unit_naam: e.target.value })}
+                placeholder="bijv. Appartement 1A, Studio West"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="huurder_naam">Naam huurder *</Label>
+              <Input
+                id="huurder_naam"
                 value={unitFormData.naam}
                 onChange={(e) => setUnitFormData({ ...unitFormData, naam: e.target.value })}
                 placeholder="bijv. Jan Jansen"
@@ -549,14 +565,13 @@ export const RoomManager = ({ propertyId, propertyName }: RoomManagerProps) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="unit_nummer">Unit nummer *</Label>
+                <Label htmlFor="unit_nummer">Unit nummer</Label>
                 <Input
                   id="unit_nummer"
                   type="number"
                   value={unitFormData.unit_nummer}
                   onChange={(e) => setUnitFormData({ ...unitFormData, unit_nummer: e.target.value })}
                   placeholder="bijv. 1"
-                  required
                 />
               </div>
               <div className="space-y-2">
