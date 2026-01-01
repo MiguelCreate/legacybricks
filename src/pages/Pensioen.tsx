@@ -182,8 +182,9 @@ const Pensioen = () => {
   const coveragePreRetirement = desiredIncome > 0 ? (incomePreRetirement / desiredIncome) * 100 : 0;
   const coveragePostRetirement = desiredIncome > 0 ? (incomePostRetirement / desiredIncome) * 100 : 0;
 
-  // Years to financial freedom (based on pre-retirement income since that's the bottleneck)
-  const yearsToFreedom = calculateYearsToFreedom(gapPreRetirement, rentalIncome);
+  // Years to financial freedom - calculate how long until passief inkomen reaches gewenst inkomen
+  // Pass desiredIncome as the target (not the gap) so it calculates correctly
+  const yearsToFreedom = calculateYearsToFreedom(desiredIncome, incomePreRetirement);
   const freedomYear = new Date().getFullYear() + yearsToFreedom;
   const freedomAge = currentAge + yearsToFreedom;
 
