@@ -46,6 +46,7 @@ interface CompoundInterestSimulatorProps {
   desiredRetirementAge: number;
   currentAge: number;
   desiredMonthlyIncome: number;
+  defaultOpen?: boolean;
 }
 
 export function CompoundInterestSimulator({
@@ -53,8 +54,9 @@ export function CompoundInterestSimulator({
   desiredRetirementAge,
   currentAge,
   desiredMonthlyIncome,
+  defaultOpen = false,
 }: CompoundInterestSimulatorProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   
   // Input state
   const [monthlyDeposit, setMonthlyDeposit] = useState(Math.round(netRentalIncome * 0.5));

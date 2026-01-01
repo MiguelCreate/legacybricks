@@ -47,6 +47,7 @@ const navGroups: NavGroup[] = [
       { icon: Target, label: "Doelen", path: "/doelen" },
       { icon: Snowflake, label: "Sneeuwbal", path: "/sneeuwbal" },
       { icon: PiggyBank, label: "Vermogen", path: "/vermogen" },
+      { icon: TrendingUp, label: "Rente-op-Rente", path: "/rente-op-rente" },
       { icon: Sunset, label: "Pensioen", path: "/pensioen" },
       { icon: Heart, label: "Legacy", path: "/legacy" },
     ],
