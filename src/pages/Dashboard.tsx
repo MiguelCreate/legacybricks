@@ -17,6 +17,7 @@ import { ShortTermRentalOverview } from "@/components/dashboard/ShortTermRentalO
 import { StilteModus } from "@/components/dashboard/StilteModus";
 import { VrijheidsDashboard } from "@/components/dashboard/VrijheidsDashboard";
 import { AudioSamenvatting } from "@/components/dashboard/AudioSamenvatting";
+import { VvEMeldingen } from "@/components/dashboard/VvEMeldingen";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -354,6 +355,9 @@ const Dashboard = () => {
               {(expiringContracts.length > 0 || showCoPilot) && (
                 <section className="space-y-4">
                   <h2 className="text-lg font-semibold text-foreground">Aandachtspunten</h2>
+                  
+                  {/* VvE Meldingen */}
+                  <VvEMeldingen />
                   
                   {/* Contract Warnings */}
                   {expiringContracts.length > 0 && (

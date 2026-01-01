@@ -1,5 +1,6 @@
-import { AlertTriangle, Scale, TrendingDown, Landmark, Wrench, Users } from "lucide-react";
+import { AlertTriangle, Scale, TrendingDown, Landmark, Wrench, Users, PiggyBank } from "lucide-react";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface RisicoKaartProps {
   juridisch: number;
@@ -9,6 +10,7 @@ interface RisicoKaartProps {
   operationeel: number;
   onChange?: (field: string, value: number) => void;
   readonly?: boolean;
+  vveReservePercentage?: number; // Optional: percentage of VvE reserve filled
 }
 
 const risicoConfig = {
@@ -57,6 +59,14 @@ const getTotalScoreLabel = (total: number) => {
   return "Hoog risico";
 };
 
+// Calculate fysiek risk modifier based on VvE reserve
+const getVvEModifier = (vveReservePercentage: number | undefined): number => {
+  if (vveReservePercentage === undefined) return 0;
+  if (vveReservePercentage >= 80) return -1; // Reduces physical risk
+  if (vveReservePercentage < 50) return 1;   // Increases physical risk
+  return 0;
+};
+
 export const RisicoKaart = ({
   juridisch,
   markt,
@@ -65,23 +75,35 @@ export const RisicoKaart = ({
   operationeel,
   onChange,
   readonly = false,
+  vveReservePercentage,
 }: RisicoKaartProps) => {
-  const scores = { juridisch, markt, fiscaal, fysiek, operationeel };
-  const totalScore = juridisch + markt + fiscaal + fysiek + operationeel;
+  const vveModifier = getVvEModifier(vveReservePercentage);
+  const adjustedFysiek = Math.max(1, Math.min(5, fysiek + vveModifier));
+  
+  const scores = { juridisch, markt, fiscaal, fysiek: adjustedFysiek, operationeel };
+  const totalScore = juridisch + markt + fiscaal + adjustedFysiek + operationeel;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-foreground">Risicokaart</h3>
           <InfoTooltip
             title="Risicokaart"
-            content="Score per categorie van 1 (laag) tot 5 (hoog). Totaalscore: <10 groen, 10-15 geel, >15 rood."
+            content="Score per categorie van 1 (laag) tot 5 (hoog). Totaalscore: <10 groen, 10-15 geel, >15 rood. VvE-reservepot beïnvloedt fysiek risico."
           />
         </div>
-        <div className={`px-3 py-1 rounded-lg font-semibold ${getTotalScoreColor(totalScore)}`}>
-          {totalScore}/25 - {getTotalScoreLabel(totalScore)}
+        <div className="flex items-center gap-2">
+          {vveReservePercentage !== undefined && vveModifier !== 0 && (
+            <Badge variant={vveModifier < 0 ? "default" : "destructive"} className="text-xs flex items-center gap-1">
+              <PiggyBank className="w-3 h-3" />
+              VvE {vveModifier < 0 ? "-1" : "+1"}
+            </Badge>
+          )}
+          <div className={`px-3 py-1 rounded-lg font-semibold ${getTotalScoreColor(totalScore)}`}>
+            {totalScore}/25 - {getTotalScoreLabel(totalScore)}
+          </div>
         </div>
       </div>
 
@@ -90,6 +112,8 @@ export const RisicoKaart = ({
           const config = risicoConfig[key];
           const Icon = config.icon;
           const score = scores[key];
+          const baseScore = key === "fysiek" ? fysiek : score;
+          const showModifier = key === "fysiek" && vveModifier !== 0;
 
           return (
             <div key={key} className="text-center space-y-2">
@@ -101,14 +125,21 @@ export const RisicoKaart = ({
               </div>
               
               {readonly ? (
-                <div
-                  className={`w-10 h-10 mx-auto rounded-lg flex items-center justify-center font-bold ${getScoreColor(score)}`}
-                >
-                  {score}
+                <div className="relative">
+                  <div
+                    className={`w-10 h-10 mx-auto rounded-lg flex items-center justify-center font-bold ${getScoreColor(score)}`}
+                  >
+                    {score}
+                  </div>
+                  {showModifier && (
+                    <span className={`absolute -top-1 -right-1 text-[10px] font-bold ${vveModifier < 0 ? "text-success" : "text-destructive"}`}>
+                      {vveModifier < 0 ? "↓" : "↑"}
+                    </span>
+                  )}
                 </div>
               ) : (
                 <select
-                  value={score}
+                  value={baseScore}
                   onChange={(e) => onChange?.(key, parseInt(e.target.value))}
                   className={`w-full h-10 rounded-lg text-center font-bold border-0 cursor-pointer ${getScoreColor(score)}`}
                 >
@@ -127,6 +158,14 @@ export const RisicoKaart = ({
           );
         })}
       </div>
+      
+      {vveReservePercentage !== undefined && (
+        <p className="text-xs text-muted-foreground text-center">
+          VvE-reservepot: {vveReservePercentage.toFixed(0)}% gevuld 
+          {vveModifier < 0 && " → fysiek risico verlaagd"}
+          {vveModifier > 0 && " → fysiek risico verhoogd"}
+        </p>
+      )}
     </div>
   );
 };

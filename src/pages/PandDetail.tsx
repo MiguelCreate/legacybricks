@@ -311,6 +311,11 @@ const PandDetail = () => {
                 fysiek={property.risico_fysiek || 1}
                 operationeel={property.risico_operationeel || 1}
                 readonly
+                vveReservePercentage={
+                  Number(property.vve_reserve_streef || 0) > 0
+                    ? (Number(property.vve_reserve_huidig || 0) / Number(property.vve_reserve_streef)) * 100
+                    : undefined
+                }
               />
             </TabsContent>
 
