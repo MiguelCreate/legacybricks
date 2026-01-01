@@ -37,6 +37,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert, Enums } from "@/integrations/supabase/types";
 import { HypotheekDialog } from "@/components/financien/HypotheekDialog";
+import { FinancienModeToggle } from "@/components/financien/FinancienModeToggle";
+import { BeginnerFinancienView } from "@/components/financien/BeginnerFinancienView";
 
 type Expense = Tables<"expenses">;
 type Payment = Tables<"payments">;
@@ -63,6 +65,7 @@ const Financien = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
+  const [mode, setMode] = useState<"beginner" | "gevorderd">("beginner");
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -90,8 +93,42 @@ const Financien = () => {
   useEffect(() => {
     if (user) {
       fetchData();
+      fetchModePreference();
     }
   }, [user]);
+
+  const fetchModePreference = async () => {
+    if (!user) return;
+    
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("voorkeur_kpi_modus")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (data?.voorkeur_kpi_modus) {
+        setMode(data.voorkeur_kpi_modus as "beginner" | "gevorderd");
+      }
+    } catch (error) {
+      console.error("Error fetching mode preference:", error);
+    }
+  };
+
+  const handleModeChange = async (newMode: "beginner" | "gevorderd") => {
+    setMode(newMode);
+    
+    if (!user) return;
+    
+    try {
+      await supabase
+        .from("profiles")
+        .update({ voorkeur_kpi_modus: newMode })
+        .eq("user_id", user.id);
+    } catch (error) {
+      console.error("Error saving mode preference:", error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -384,52 +421,33 @@ const Financien = () => {
         </header>
 
         <div className="px-4 md:px-6 lg:px-8 pb-8 space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              title="Maandelijkse Cashflow"
-              value={`€${netCashflow.toLocaleString()}`}
-              subtitle="Netto na kosten"
-              icon={<TrendingUp className="w-5 h-5 text-success" />}
-              variant={netCashflow >= 0 ? "success" : "default"}
-              tooltip={{
-                title: "Netto Cashflow",
-                content: "Dit is wat je overhoudt na aftrek van hypotheeklasten en kosten. Een positieve cashflow is je doel!",
-              }}
-            />
-            <StatCard
-              title="Huurinkomsten"
-              value={`€${totalMonthlyRent.toLocaleString()}`}
-              subtitle="Per maand"
-              icon={<Euro className="w-5 h-5 text-primary" />}
-              tooltip={{
-                title: "Totale Huurinkomsten",
-                content: "De som van alle maandelijkse huren van je actieve huurders.",
-              }}
-            />
-            <StatCard
-              title="Hypotheeklasten"
-              value={`€${totalMonthlyLoanPayments.toLocaleString()}`}
-              subtitle="Per maand"
-              icon={<TrendingDown className="w-5 h-5 text-destructive" />}
-              tooltip={{
-                title: "Totale Hypotheeklasten",
-                content: "De som van alle maandelijkse hypotheekbetalingen.",
-              }}
-            />
-            <StatCard
-              title="Bruto Rendement"
-              value={`${grossYield.toFixed(1)}%`}
-              subtitle="Jaarlijks"
-              icon={<BarChart3 className="w-5 h-5 text-warning" />}
-              tooltip={{
-                title: "Bruto Rendement",
-                content: "Jaarlijkse huurinkomsten gedeeld door de totale waarde van je portefeuille. Geeft aan hoe efficiënt je investering is.",
-              }}
-            />
-          </div>
+          {/* Mode Toggle */}
+          <FinancienModeToggle mode={mode} onModeChange={handleModeChange} />
 
-          {/* Recent Transactions */}
+          {mode === "beginner" ? (
+            <BeginnerFinancienView
+              totalMonthlyRent={totalMonthlyRent}
+              totalMonthlyLoanPayments={totalMonthlyLoanPayments}
+              monthlyExpenses={monthlyExpenses}
+              netCashflow={netCashflow}
+              portfolioValue={portfolioValue}
+              grossYield={grossYield}
+            />
+          ) : (
+            <>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                  title="Maandelijkse Cashflow"
+                  value={`€${netCashflow.toLocaleString()}`}
+                  subtitle="Netto na kosten"
+                  icon={<TrendingUp className="w-5 h-5 text-success" />}
+                  variant={netCashflow >= 0 ? "success" : "default"}
+                  tooltip={{
+                    title: "Netto Cashflow",
+                    content: "Dit is wat je overhoudt na aftrek van hypotheeklasten en kosten. Een positieve cashflow is je doel!",
+                  }}
+              </div>
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Recent Payments */}
             <div className="bg-card rounded-xl border shadow-card p-5">
@@ -675,6 +693,8 @@ const Financien = () => {
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
       </div>
 
