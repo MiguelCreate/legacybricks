@@ -448,37 +448,103 @@ export type Database = {
           },
         ]
       }
+      goal_bronnen: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          percentage_bijdrage: number | null
+          property_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          percentage_bijdrage?: number | null
+          property_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          percentage_bijdrage?: number | null
+          property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_bronnen_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_bronnen_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
           bereikt: boolean
           bron_property_id: string | null
+          categorie: string | null
           created_at: string
+          doel_type: string | null
           doelbedrag: number
+          eind_datum: string | null
+          flexibiliteit: string | null
+          gepauzeerd: boolean | null
           huidig_bedrag: number
           id: string
+          maandelijkse_inleg: number | null
           naam: string
+          notities: string | null
+          prioriteit: string | null
+          start_datum: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           bereikt?: boolean
           bron_property_id?: string | null
+          categorie?: string | null
           created_at?: string
+          doel_type?: string | null
           doelbedrag: number
+          eind_datum?: string | null
+          flexibiliteit?: string | null
+          gepauzeerd?: boolean | null
           huidig_bedrag?: number
           id?: string
+          maandelijkse_inleg?: number | null
           naam: string
+          notities?: string | null
+          prioriteit?: string | null
+          start_datum?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           bereikt?: boolean
           bron_property_id?: string | null
+          categorie?: string | null
           created_at?: string
+          doel_type?: string | null
           doelbedrag?: number
+          eind_datum?: string | null
+          flexibiliteit?: string | null
+          gepauzeerd?: boolean | null
           huidig_bedrag?: number
           id?: string
+          maandelijkse_inleg?: number | null
           naam?: string
+          notities?: string | null
+          prioriteit?: string | null
+          start_datum?: string | null
           updated_at?: string
           user_id?: string
         }
