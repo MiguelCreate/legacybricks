@@ -602,7 +602,10 @@ const Panden = () => {
               </p>
               {!searchQuery && statusFilter === "all" && (
                 <Button
-                  onClick={() => setIsDialogOpen(true)}
+                  onClick={() => {
+                    resetForm();
+                    setIsDialogOpen(true);
+                  }}
                   className="gradient-primary text-primary-foreground"
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -911,11 +914,16 @@ const Panden = () => {
                   id="aantal_units"
                   type="number"
                   min="1"
-                  value={formData.aantal_units || 1}
-                  onChange={(e) =>
-                    setFormData({ ...formData, aantal_units: Number(e.target.value) || 1 })
-                  }
-                  placeholder="1"
+                  value={formData.aantal_units ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const next = raw === "" ? undefined : Number.parseInt(raw, 10);
+                    setFormData({
+                      ...formData,
+                      aantal_units: Number.isFinite(next as number) ? (next as number) : undefined,
+                    });
+                  }}
+                  placeholder="Bijv. 2"
                 />
               </div>
 
