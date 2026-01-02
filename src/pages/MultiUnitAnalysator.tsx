@@ -103,6 +103,91 @@ function calculatePMT(principal: number, annualRate: number, years: number): num
   return principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
 }
 
+// Helper to handle number input parsing
+function handleNumberInput(
+  value: string,
+  onChange: (val: number) => void
+) {
+  if (value === '' || value === '-') {
+    onChange(0);
+    return;
+  }
+  const parsed = parseFloat(value);
+  if (!isNaN(parsed)) {
+    onChange(parsed);
+  }
+}
+
+// InputField component defined outside to prevent re-creation on each render
+interface InputFieldProps {
+  label: string;
+  value: number;
+  onChange: (val: number) => void;
+  tooltip?: string;
+  prefix?: string;
+  suffix?: string;
+  disabled?: boolean;
+}
+
+function InputField({ 
+  label, 
+  value, 
+  onChange, 
+  tooltip,
+  prefix,
+  suffix,
+  disabled,
+}: InputFieldProps) {
+  const [localValue, setLocalValue] = useState(value.toString());
+
+  // Sync localValue when external value changes (but only if input is not focused)
+  useEffect(() => {
+    setLocalValue(value.toString());
+  }, [value]);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1">
+        <Label className="text-sm text-muted-foreground">{label}</Label>
+        {tooltip && <InfoTooltip title={label} content={tooltip} />}
+      </div>
+      <div className="relative">
+        {prefix && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            {prefix}
+          </span>
+        )}
+        <Input
+          type="text"
+          inputMode="decimal"
+          value={localValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            setLocalValue(newValue);
+            handleNumberInput(newValue, onChange);
+          }}
+          onBlur={() => {
+            const parsed = parseFloat(localValue);
+            if (!isNaN(parsed)) {
+              setLocalValue(parsed.toString());
+            } else {
+              setLocalValue('0');
+              onChange(0);
+            }
+          }}
+          disabled={disabled}
+          className={`h-10 ${prefix ? 'pl-7' : ''} ${suffix ? 'pr-12' : ''} ${disabled ? 'bg-muted' : ''}`}
+        />
+        {suffix && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            {suffix}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function MultiUnitAnalysator() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -388,91 +473,8 @@ export default function MultiUnitAnalysator() {
     }));
   };
 
-  const handleNumberInput = (
-    value: string,
-    onChange: (val: number) => void
-  ) => {
-    // Allow empty string for clearing the field
-    if (value === '' || value === '-') {
-      onChange(0);
-      return;
-    }
-    const parsed = parseFloat(value);
-    if (!isNaN(parsed)) {
-      onChange(parsed);
-    }
-  };
-  
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-
-  const InputField = ({ 
-    label, 
-    value, 
-    onChange, 
-    tooltip,
-    prefix,
-    suffix,
-    disabled,
-  }: { 
-    label: string; 
-    value: number; 
-    onChange: (val: number) => void;
-    tooltip?: string;
-    prefix?: string;
-    suffix?: string;
-    disabled?: boolean;
-  }) => {
-    const [localValue, setLocalValue] = useState(value.toString());
-
-    // Sync localValue when external value changes
-    useEffect(() => {
-      setLocalValue(value.toString());
-    }, [value]);
-
-    return (
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-1">
-          <Label className="text-sm text-muted-foreground">{label}</Label>
-          {tooltip && <InfoTooltip title={label} content={tooltip} />}
-        </div>
-        <div className="relative">
-          {prefix && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              {prefix}
-            </span>
-          )}
-          <Input
-            type="text"
-            inputMode="decimal"
-            value={localValue}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              setLocalValue(newValue);
-              handleNumberInput(newValue, onChange);
-            }}
-            onBlur={() => {
-              // On blur, format to proper number
-              const parsed = parseFloat(localValue);
-              if (!isNaN(parsed)) {
-                setLocalValue(parsed.toString());
-              } else {
-                setLocalValue('0');
-                onChange(0);
-              }
-            }}
-            disabled={disabled}
-            className={`h-10 ${prefix ? 'pl-7' : ''} ${suffix ? 'pr-12' : ''} ${disabled ? 'bg-muted' : ''}`}
-          />
-          {suffix && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              {suffix}
-            </span>
-          )}
-        </div>
-      </div>
-    );
   };
 
   return (
