@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowLeft, CheckCircle2, ChevronRight, Lightbulb, BookOpen, Calculator, Award, Info } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, ChevronRight, Lightbulb, BookOpen, Calculator, Award, Info, ExternalLink } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ interface AcademyLessonProps {
 type LessonStep = "intro" | "theory" | "example" | "exercise" | "summary";
 
 export const AcademyLesson = ({ lesson, onComplete, onBack, isCompleted }: AcademyLessonProps) => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<LessonStep>("intro");
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -329,6 +331,27 @@ export const AcademyLesson = ({ lesson, onComplete, onBack, isCompleted }: Acade
                     <span className="text-4xl mb-2 block">{lesson.badge.icon}</span>
                     <p className="font-semibold">Badge te verdienen:</p>
                     <p className="text-amber-600 dark:text-amber-400">{lesson.badge.name}</p>
+                  </div>
+                )}
+
+                {/* Link to Analyzer */}
+                {lesson.relatedAnalyzer && (
+                  <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calculator className="w-5 h-5 text-primary" />
+                      <span className="font-semibold">Pas het toe op je eigen pand</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {lesson.relatedAnalyzer.description}
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={() => navigate(lesson.relatedAnalyzer!.path)}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      {lesson.relatedAnalyzer.label}
+                    </Button>
                   </div>
                 )}
 

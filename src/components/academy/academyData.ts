@@ -24,6 +24,12 @@ export interface LessonExercise {
   explanation: string;
 }
 
+export interface RelatedAnalyzer {
+  path: string;
+  label: string;
+  description: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -32,6 +38,7 @@ export interface Lesson {
   icon: React.ElementType;
   duration: number; // in minutes
   badge?: LessonBadge;
+  relatedAnalyzer?: RelatedAnalyzer;
   content: {
     intro: string;
     theory: string[];
@@ -84,6 +91,11 @@ export const lessons: Lesson[] = [
       name: "Eerste Huurberekening!",
       icon: "💰",
     },
+    relatedAnalyzer: {
+      path: "/rendementsanalysator",
+      label: "Analyseer je eigen huurinkomsten",
+      description: "Pas de bruto/netto berekening toe op je eigen pand",
+    },
     content: {
       intro: "Als vastgoedbelegger is het cruciaal om het verschil te begrijpen tussen wat je ontvangt (bruto) en wat je overhoudt (netto). Dit is de basis van elke vastgoedinvestering.",
       theory: [
@@ -132,6 +144,11 @@ Je maandelijkse kosten zijn:
     level: "beginner",
     icon: Wallet,
     duration: 7,
+    relatedAnalyzer: {
+      path: "/financien",
+      label: "Bekijk je werkelijke kosten",
+      description: "Analyseer de kosten van je eigen panden",
+    },
     content: {
       intro: "Om succesvol te investeren moet je alle kosten kennen. In Portugal zijn er specifieke belastingen en kosten die je rendement beïnvloeden.",
       theory: [
@@ -187,6 +204,11 @@ Dit is exclusief condominium (VvE) bijdrage, die varieert per gebouw.`,
       name: "BAR Meester",
       icon: "📊",
     },
+    relatedAnalyzer: {
+      path: "/rendementsanalysator",
+      label: "Bereken BAR voor je pand",
+      description: "Gebruik de analysator om het BAR van je eigen investering te berekenen",
+    },
     content: {
       intro: "Het Bruto Aanvangsrendement (BAR) is de eerste metric die investeerders gebruiken om snel te bepalen of een pand interessant is. Het geeft aan hoeveel procent van je investering je jaarlijks terugkrijgt aan huur.",
       theory: [
@@ -236,6 +258,11 @@ Dit is een gezond rendement voor een grote stad in Portugal.`,
     level: "gevorderd",
     icon: BarChart3,
     duration: 10,
+    relatedAnalyzer: {
+      path: "/rendementsanalysator",
+      label: "Bereken NAR voor je pand",
+      description: "Bekijk het netto rendement van je eigen investering",
+    },
     content: {
       intro: "NAR geeft een realistischer beeld dan BAR omdat het rekening houdt met operationele kosten. Dit is de metric waar ervaren investeerders naar kijken.",
       theory: [
@@ -294,6 +321,11 @@ Dit is een gezond rendement voor een grote stad in Portugal.`,
       name: "DSCR Meester!",
       icon: "🎯",
     },
+    relatedAnalyzer: {
+      path: "/rendementsanalysator",
+      label: "Bereken Cash-on-Cash",
+      description: "Bekijk het rendement op je eigen vermogen",
+    },
     content: {
       intro: "Cash-on-Cash Return meet het rendement op je eigen ingebrachte geld (eigen vermogen), niet op de totale waarde van het pand. Dit is cruciaal bij gefinancierde aankopen.",
       theory: [
@@ -351,6 +383,11 @@ Dit is een gezond rendement voor een grote stad in Portugal.`,
       name: "Sneeuwbal Strateeg",
       icon: "❄️",
     },
+    relatedAnalyzer: {
+      path: "/sneeuwbal",
+      label: "Plan je sneeuwbalstrategie",
+      description: "Bereken de optimale aflosvolgorde voor je panden",
+    },
     content: {
       intro: "Het sneeuwbaleffect is een strategie waarbij je cashflow van rendabele panden gebruikt om andere panden versneld af te lossen. Zo bouw je exponentieel vermogen op.",
       theory: [
@@ -406,6 +443,11 @@ Dit is een gezond rendement voor een grote stad in Portugal.`,
     level: "professional",
     icon: LineChart,
     duration: 12,
+    relatedAnalyzer: {
+      path: "/rente-op-rente",
+      label: "Simuleer rente-op-rente",
+      description: "Bereken de groei van je vermogen over tijd",
+    },
     content: {
       intro: "Het rente-op-rente effect is krachtig, maar je moet rekening houden met inflatie om een realistisch beeld te krijgen van je toekomstige koopkracht.",
       theory: [
@@ -463,6 +505,11 @@ Het verschil van €43.000 is 'verdampt' door inflatie.
       name: "Pensioengat Gesloten!",
       icon: "🌅",
     },
+    relatedAnalyzer: {
+      path: "/pensioen",
+      label: "Bereken je pensioengat",
+      description: "Analyseer hoeveel vermogen je nodig hebt",
+    },
     content: {
       intro: "Het pensioengat is het verschil tussen je gewenste inkomen en wat je daadwerkelijk ontvangt aan pensioen. In Portugal is dit vaak groter dan in Nederland.",
       theory: [
@@ -519,6 +566,11 @@ Je huidige vastgoedportefeuille: €500.000
     level: "professional",
     icon: Building2,
     duration: 15,
+    relatedAnalyzer: {
+      path: "/multi-unit-analysator",
+      label: "Analyseer je multi-unit pand",
+      description: "Verdeel kosten en bereken rendement per unit",
+    },
     content: {
       intro: "Bij panden met meerdere units moet je kosten eerlijk verdelen. Dit is essentieel voor correcte rendementsbepaling per unit.",
       theory: [
