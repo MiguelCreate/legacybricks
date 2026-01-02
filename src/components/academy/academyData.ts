@@ -30,6 +30,13 @@ export interface RelatedAnalyzer {
   description: string;
 }
 
+export interface ExampleData {
+  purchasePrice?: number;
+  monthlyRent?: number;
+  location?: string;
+  description?: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
@@ -39,6 +46,7 @@ export interface Lesson {
   duration: number; // in minutes
   badge?: LessonBadge;
   relatedAnalyzer?: RelatedAnalyzer;
+  exampleData?: ExampleData;
   content: {
     intro: string;
     theory: string[];
@@ -95,6 +103,12 @@ export const lessons: Lesson[] = [
       path: "/rendementsanalysator",
       label: "Analyseer je eigen huurinkomsten",
       description: "Pas de bruto/netto berekening toe op je eigen pand",
+    },
+    exampleData: {
+      purchasePrice: 130000,
+      monthlyRent: 650,
+      location: "Figueira da Foz",
+      description: "Appartement zoals in de les (€650/maand huur)",
     },
     content: {
       intro: "Als vastgoedbelegger is het cruciaal om het verschil te begrijpen tussen wat je ontvangt (bruto) en wat je overhoudt (netto). Dit is de basis van elke vastgoedinvestering.",
@@ -209,6 +223,12 @@ Dit is exclusief condominium (VvE) bijdrage, die varieert per gebouw.`,
       label: "Bereken BAR voor je pand",
       description: "Gebruik de analysator om het BAR van je eigen investering te berekenen",
     },
+    exampleData: {
+      purchasePrice: 210000,
+      monthlyRent: 1100,
+      location: "Porto",
+      description: "Porto appartement (60m², €3.500/m², €1.100/maand)",
+    },
     content: {
       intro: "Het Bruto Aanvangsrendement (BAR) is de eerste metric die investeerders gebruiken om snel te bepalen of een pand interessant is. Het geeft aan hoeveel procent van je investering je jaarlijks terugkrijgt aan huur.",
       theory: [
@@ -262,6 +282,12 @@ Dit is een gezond rendement voor een grote stad in Portugal.`,
       path: "/rendementsanalysator",
       label: "Bereken NAR voor je pand",
       description: "Bekijk het netto rendement van je eigen investering",
+    },
+    exampleData: {
+      purchasePrice: 210000,
+      monthlyRent: 1100,
+      location: "Porto",
+      description: "Porto appartement met OPEX €2.400/jaar",
     },
     content: {
       intro: "NAR geeft een realistischer beeld dan BAR omdat het rekening houdt met operationele kosten. Dit is de metric waar ervaren investeerders naar kijken.",
@@ -325,6 +351,12 @@ Dit is een gezond rendement voor een grote stad in Portugal.`,
       path: "/rendementsanalysator",
       label: "Bereken Cash-on-Cash",
       description: "Bekijk het rendement op je eigen vermogen",
+    },
+    exampleData: {
+      purchasePrice: 210000,
+      monthlyRent: 1100,
+      location: "Porto",
+      description: "Porto met 33% eigen inbreng (€70.000)",
     },
     content: {
       intro: "Cash-on-Cash Return meet het rendement op je eigen ingebrachte geld (eigen vermogen), niet op de totale waarde van het pand. Dit is cruciaal bij gefinancierde aankopen.",

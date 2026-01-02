@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { GraduationCap, Trophy, Star, CheckCircle2, Lock, ChevronRight, BookOpen, Calculator, TrendingUp, Award, Sparkles, Info, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { GraduationCap, Trophy, Star, CheckCircle2, Lock, ChevronRight, BookOpen, Calculator, TrendingUp, Award, Sparkles, Info, ExternalLink, Zap } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +18,7 @@ import { AcademyBadges } from "@/components/academy/AcademyBadges";
 import { lessons, type Lesson, type LessonLevel } from "@/components/academy/academyData";
 
 const Academy = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeLevel, setActiveLevel] = useState<LessonLevel>("beginner");
@@ -23,6 +26,25 @@ const Academy = () => {
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleQuickStart = (lesson: Lesson, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!lesson.exampleData || !lesson.relatedAnalyzer) return;
+    
+    const params = new URLSearchParams();
+    if (lesson.exampleData.purchasePrice) params.set("price", String(lesson.exampleData.purchasePrice));
+    if (lesson.exampleData.monthlyRent) params.set("rent", String(lesson.exampleData.monthlyRent));
+    if (lesson.exampleData.location) params.set("location", lesson.exampleData.location);
+    params.set("from", "academy");
+    params.set("lesson", lesson.title);
+    
+    navigate(`${lesson.relatedAnalyzer.path}?${params.toString()}`);
+    
+    toast({
+      title: "📊 Voorbeelddata geladen",
+      description: lesson.exampleData.description,
+    });
+  };
 
   useEffect(() => {
     if (user) {
@@ -292,8 +314,8 @@ const Academy = () => {
                           </CardHeader>
 
                           <CardContent>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <Badge variant="secondary" className="text-xs">
                                   {lesson.duration} min
                                 </Badge>
@@ -304,9 +326,33 @@ const Academy = () => {
                                   </Badge>
                                 )}
                               </div>
-                              {isUnlocked && !isCompleted && (
-                                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                              )}
+                              <div className="flex items-center gap-1">
+                                {lesson.exampleData && lesson.relatedAnalyzer && isUnlocked && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-primary hover:bg-primary/10"
+                                          onClick={(e) => handleQuickStart(lesson, e)}
+                                        >
+                                          <Zap className="w-4 h-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-[200px]">
+                                        <p className="font-medium">Snelstart</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {lesson.exampleData.description}
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                                {isUnlocked && !isCompleted && (
+                                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                                )}
+                              </div>
                             </div>
                           </CardContent>
                         </Card>

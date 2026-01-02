@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -206,6 +207,7 @@ const InputSection = ({
 export default function Rendementsanalysator() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   
   const [activeTimeframe, setActiveTimeframe] = useState<TimeFrame>("10j");
   const [showPartnerOverview, setShowPartnerOverview] = useState(false);
@@ -292,6 +294,54 @@ export default function Rendementsanalysator() {
     fetchGoals();
     fetchModePreference();
   }, [user]);
+
+  // Load data from Academy quick start
+  useEffect(() => {
+    const priceParam = searchParams.get("price");
+    const rentParam = searchParams.get("rent");
+    const locationParam = searchParams.get("location");
+    const fromParam = searchParams.get("from");
+    const lessonParam = searchParams.get("lesson");
+    
+    if (fromParam === "academy" && (priceParam || rentParam)) {
+      const newInputs = { ...inputs };
+      
+      if (priceParam) {
+        const price = parseInt(priceParam);
+        newInputs.purchasePrice = price;
+        newInputs.imt = Math.round(price * 0.065); // 6.5% IMT
+        newInputs.downpayment = Math.round(price * 0.25); // 25% eigen inleg
+      }
+      
+      if (rentParam) {
+        newInputs.monthlyRentLT = parseInt(rentParam);
+      }
+      
+      setInputs(newInputs);
+      
+      if (locationParam) {
+        setPropertyLocation(locationParam);
+        setPropertyName(`${locationParam} - Academy voorbeeld`);
+      }
+      
+      // Expand all sections to show loaded data
+      setExpandedSections({
+        purchase: true,
+        mortgage: true,
+        rental: true,
+        opex: true,
+        assumptions: true,
+      });
+      
+      // Show toast
+      if (lessonParam) {
+        toast({
+          title: "📚 Academy voorbeelddata geladen",
+          description: `Data uit les "${lessonParam}" is ingevuld. Pas de waardes aan om je eigen scenario te analyseren.`,
+        });
+      }
+    }
+  }, [searchParams]);
 
   const handleModeChange = async (newMode: "beginner" | "gevorderd") => {
     setMode(newMode);
