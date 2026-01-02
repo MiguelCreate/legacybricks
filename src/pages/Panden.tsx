@@ -152,10 +152,10 @@ const Panden = () => {
 
   const fetchProperties = async () => {
     try {
+      // Haal alle panden op (inclusief gearchiveerde)
       const { data, error } = await supabase
         .from("properties")
         .select("*")
-        .eq("gearchiveerd", false)
         .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false });
 
@@ -474,9 +474,17 @@ const Panden = () => {
     const matchesSearch =
       property.naam.toLowerCase().includes(searchQuery.toLowerCase()) ||
       property.locatie.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Filter op gearchiveerd status
+    if (statusFilter === "gearchiveerd") {
+      return matchesSearch && property.gearchiveerd === true;
+    }
+    
+    // Bij alle andere filters: toon alleen niet-gearchiveerde panden
+    const isNotArchived = property.gearchiveerd !== true;
     const matchesStatus =
       statusFilter === "all" || property.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && isNotArchived;
   });
 
   return (
@@ -533,6 +541,7 @@ const Panden = () => {
                 <SelectItem value="renovatie">Renovatie</SelectItem>
                 <SelectItem value="verhuur">Verhuurd</SelectItem>
                 <SelectItem value="te_koop">Te Koop</SelectItem>
+                <SelectItem value="gearchiveerd">Gearchiveerd</SelectItem>
               </SelectContent>
             </Select>
           </div>
