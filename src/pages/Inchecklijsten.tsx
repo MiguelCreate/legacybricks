@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { ClipboardCheck, Plus, Search, Building2, Camera, Check, Trash2, MoreVertical, Pencil } from "lucide-react";
+import { ClipboardCheck, Plus, Search, Building2, Camera, Check, Trash2, MoreVertical, Pencil, Link } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +55,7 @@ const defaultIncheckItems: ChecklistItem[] = [
   { id: "8", label: "Inventarislijst ondertekend", checked: false },
 ];
 
-const defaultRetourItems: ChecklistItem[] = [
+const defaultUitcheckItems: ChecklistItem[] = [
   { id: "1", label: "Sleutels terugontvangen", checked: false },
   { id: "2", label: "Eindmeterstanden genoteerd", checked: false },
   { id: "3", label: "Eindcontrole woning uitgevoerd", checked: false },
@@ -81,6 +82,8 @@ const Inchecklijsten = () => {
     type: "incheck" as Checklist["type"],
     datum: new Date().toISOString().split("T")[0],
     items: defaultIncheckItems,
+    opmerkingen: "",
+    foto_drive_link: "",
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -167,7 +170,11 @@ const Inchecklijsten = () => {
         huurder_naam: formData.huurder_naam,
         type: formData.type,
         datum: formData.datum,
-        items: JSON.parse(JSON.stringify(formData.items)),
+        items: {
+          items: JSON.parse(JSON.stringify(formData.items)),
+          opmerkingen: formData.opmerkingen,
+          foto_drive_link: formData.foto_drive_link,
+        },
         voltooid: formData.items.every(item => item.checked),
         foto_link: photoUrl,
         handtekening: signatureUrl,
@@ -210,13 +217,21 @@ const Inchecklijsten = () => {
 
   const handleEdit = (checklist: Checklist) => {
     setEditingChecklist(checklist);
+    const checklistItems = checklist.items as unknown as { items?: ChecklistItem[], opmerkingen?: string, foto_drive_link?: string } | ChecklistItem[];
+    const items = Array.isArray(checklistItems) 
+      ? checklistItems 
+      : (checklistItems?.items || (checklist.type === "incheck" ? defaultIncheckItems : defaultUitcheckItems));
+    const opmerkingen = !Array.isArray(checklistItems) && checklistItems?.opmerkingen ? checklistItems.opmerkingen : "";
+    const foto_drive_link = !Array.isArray(checklistItems) && checklistItems?.foto_drive_link ? checklistItems.foto_drive_link : "";
+    
     setFormData({
       property_id: checklist.property_id,
       huurder_naam: checklist.huurder_naam,
       type: checklist.type,
       datum: checklist.datum,
-      items: (checklist.items as unknown as ChecklistItem[]) || 
-        (checklist.type === "incheck" ? defaultIncheckItems : defaultRetourItems),
+      items: items as ChecklistItem[],
+      opmerkingen,
+      foto_drive_link,
     });
     setPhotoPreview(checklist.foto_link);
     setSignatureData(checklist.handtekening);
@@ -252,6 +267,8 @@ const Inchecklijsten = () => {
       type: "incheck",
       datum: new Date().toISOString().split("T")[0],
       items: defaultIncheckItems,
+      opmerkingen: "",
+      foto_drive_link: "",
     });
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -263,7 +280,7 @@ const Inchecklijsten = () => {
     setFormData({
       ...formData,
       type,
-      items: type === "incheck" ? defaultIncheckItems : defaultRetourItems,
+      items: type === "incheck" ? defaultIncheckItems : defaultUitcheckItems,
     });
   };
 
@@ -362,8 +379,22 @@ const Inchecklijsten = () => {
   });
 
   const completedCount = (items: unknown): number => {
+    // Handle new format with nested items
+    if (items && typeof items === 'object' && !Array.isArray(items) && 'items' in items) {
+      const nestedItems = (items as { items: ChecklistItem[] }).items;
+      if (!Array.isArray(nestedItems)) return 0;
+      return nestedItems.filter(i => i.checked).length;
+    }
     if (!Array.isArray(items)) return 0;
     return (items as ChecklistItem[]).filter(i => i.checked).length;
+  };
+  
+  const getTotalItems = (items: unknown): number => {
+    if (items && typeof items === 'object' && !Array.isArray(items) && 'items' in items) {
+      const nestedItems = (items as { items: ChecklistItem[] }).items;
+      return Array.isArray(nestedItems) ? nestedItems.length : 0;
+    }
+    return Array.isArray(items) ? items.length : 0;
   };
 
   return (
@@ -379,7 +410,7 @@ const Inchecklijsten = () => {
                 </h1>
                 <InfoTooltip
                   title="Inchecklijsten"
-                  content="Maak incheck- en retourchecklist voor huurders. Voeg foto's toe van de woningsstaat en laat de huurder digitaal tekenen."
+                  content="Maak incheck- en uitchecklijsten voor huurders. Voeg foto's toe van de woningsstaat en laat de huurder digitaal tekenen."
                 />
               </div>
               <p className="text-muted-foreground mt-1">
@@ -440,9 +471,8 @@ const Inchecklijsten = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredChecklists.map((checklist, index) => {
-                const itemsArray = checklist.items as unknown as ChecklistItem[];
-                const completed = completedCount(itemsArray);
-                const total = Array.isArray(itemsArray) ? itemsArray.length : 0;
+                const completed = completedCount(checklist.items);
+                const total = getTotalItems(checklist.items);
 
                 return (
                   <div
@@ -499,7 +529,7 @@ const Inchecklijsten = () => {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Badge variant={checklist.type === "incheck" ? "success" : "secondary"}>
-                          {checklist.type === "incheck" ? "Incheck" : "Retour"}
+                          {checklist.type === "incheck" ? "Incheck" : "Uitcheck"}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
                           {format(new Date(checklist.datum), "d MMMM yyyy", { locale: nl })}
@@ -580,7 +610,7 @@ const Inchecklijsten = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="incheck">Incheck</SelectItem>
-                      <SelectItem value="retour">Retour</SelectItem>
+                      <SelectItem value="retour">Uitcheck</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -622,18 +652,31 @@ const Inchecklijsten = () => {
                 <Label>Checklist Items</Label>
                 <div className="grid gap-2 p-4 bg-accent/30 rounded-xl">
                   {formData.items.map(item => (
-                    <div
+                    <label
                       key={item.id}
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                      onClick={() => toggleItem(item.id)}
                     >
-                      <Checkbox checked={item.checked} />
+                      <Checkbox 
+                        checked={item.checked} 
+                        onCheckedChange={() => toggleItem(item.id)}
+                      />
                       <span className={item.checked ? "line-through text-muted-foreground" : ""}>
                         {item.label}
                       </span>
-                    </div>
+                    </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Opmerkingen */}
+              <div className="space-y-3">
+                <Label>Opmerkingen</Label>
+                <Textarea
+                  placeholder="Eventuele opmerkingen over de woning of check-in/uitcheck..."
+                  value={formData.opmerkingen}
+                  onChange={e => setFormData({ ...formData, opmerkingen: e.target.value })}
+                  rows={3}
+                />
               </div>
 
               {/* Photo Upload */}
@@ -658,6 +701,23 @@ const Inchecklijsten = () => {
                     />
                   )}
                 </div>
+              </div>
+
+              {/* Google Drive / OneDrive Link */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Link className="w-4 h-4" />
+                  Foto's Link (Google Drive / OneDrive)
+                </Label>
+                <Input
+                  type="url"
+                  placeholder="https://drive.google.com/... of https://onedrive.live.com/..."
+                  value={formData.foto_drive_link}
+                  onChange={e => setFormData({ ...formData, foto_drive_link: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Voeg een link toe naar een map met foto's van de woning
+                </p>
               </div>
 
               {/* Signature Canvas */}
