@@ -594,7 +594,10 @@ export default function MultiUnitAnalysator() {
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-1">
                         <Label className="text-sm text-muted-foreground">Type Pand</Label>
-                        <InfoTooltip title="Type Pand" content="Selecteer het type pand voor IMT berekening. Niet-woning = 6.5% vast tarief." />
+                        <InfoTooltip 
+                          title="Type Pand" 
+                          content="Woning = eigen bewoning of secundaire woning (progressief tarief: 0% tot €106.346, daarna 2%→5%→7%→8%). Niet-woning = investeerders, toeristische verhuur (vast 6,5%)." 
+                        />
                       </div>
                       <Select
                         value={inputs.pandType}
@@ -604,8 +607,8 @@ export default function MultiUnitAnalysator() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="niet-woning">Niet-woning (investering) - 6.5%</SelectItem>
-                          <SelectItem value="woning">Woning - progressief tarief</SelectItem>
+                          <SelectItem value="niet-woning">🏢 Niet-woning (investeerder) - 6,5%</SelectItem>
+                          <SelectItem value="woning">🏠 Woning (eigen bewoning) - progressief</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -624,7 +627,7 @@ export default function MultiUnitAnalysator() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1">
                             <Label className="text-sm text-muted-foreground">IMT</Label>
-                            <InfoTooltip title="IMT" content="Imposto Municipal sobre Transmissões - overdrachtsbelasting bij aankoop. Automatisch berekend volgens Portugese 2025 tarieven." />
+                            <InfoTooltip title="IMT" content={inputs.pandType === 'woning' ? "Progressief tarief: 0% tot €106.346, daarna 2%→5%→7%→8%" : "Vast tarief 6,5% voor investeerders"} />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-xs text-muted-foreground">Auto</span>
