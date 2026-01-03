@@ -149,18 +149,8 @@ const Academy = () => {
   };
 
   const isLessonUnlocked = (lesson: Lesson) => {
-    if (lesson.level === "beginner") return true;
-    
-    const levelOrder: LessonLevel[] = ["beginner", "gevorderd", "professional"];
-    const currentLevelIndex = levelOrder.indexOf(lesson.level);
-    const previousLevel = levelOrder[currentLevelIndex - 1];
-    
-    if (!previousLevel) return true;
-    
-    const previousLevelLessons = lessons.filter(l => l.level === previousLevel);
-    const completedPrevious = previousLevelLessons.filter(l => completedLessons.includes(l.id));
-    
-    return completedPrevious.length >= Math.ceil(previousLevelLessons.length * 0.5);
+    // All lessons are now always unlocked - users can do them in any order
+    return true;
   };
 
   const levelConfig = {
