@@ -295,7 +295,7 @@ export default function Rendementsanalysator() {
     fetchModePreference();
   }, [user]);
 
-  // Load data from Academy quick start
+  // Load data from Academy quick start - runs only once on mount
   useEffect(() => {
     const priceParam = searchParams.get("price");
     const rentParam = searchParams.get("rent");
@@ -304,20 +304,22 @@ export default function Rendementsanalysator() {
     const lessonParam = searchParams.get("lesson");
     
     if (fromParam === "academy" && (priceParam || rentParam)) {
-      const newInputs = { ...inputs };
-      
-      if (priceParam) {
-        const price = parseInt(priceParam);
-        newInputs.purchasePrice = price;
-        newInputs.imt = Math.round(price * 0.065); // 6.5% IMT
-        newInputs.downpayment = Math.round(price * 0.25); // 25% eigen inleg
-      }
-      
-      if (rentParam) {
-        newInputs.monthlyRentLT = parseInt(rentParam);
-      }
-      
-      setInputs(newInputs);
+      setInputs(prev => {
+        const newInputs = { ...prev };
+        
+        if (priceParam) {
+          const price = parseInt(priceParam);
+          newInputs.purchasePrice = price;
+          newInputs.imt = Math.round(price * 0.065); // 6.5% IMT
+          newInputs.downpayment = Math.round(price * 0.25); // 25% eigen inleg
+        }
+        
+        if (rentParam) {
+          newInputs.monthlyRentLT = parseInt(rentParam);
+        }
+        
+        return newInputs;
+      });
       
       if (locationParam) {
         setPropertyLocation(locationParam);
@@ -341,7 +343,8 @@ export default function Rendementsanalysator() {
         });
       }
     }
-  }, [searchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleModeChange = async (newMode: "beginner" | "gevorderd") => {
     setMode(newMode);
