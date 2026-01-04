@@ -70,10 +70,19 @@ export const listingAnalyzerApi = {
       return { success: false, error: error.message };
     }
 
+    // Check for blocking/captcha
+    if (data?.blocked) {
+      return { success: false, error: data.error || 'Website geblokkeerd' };
+    }
+
+    if (!data?.success) {
+      return { success: false, error: data?.error || 'Scraping mislukt' };
+    }
+
     // Handle v1 API response structure
     const markdown = data?.data?.markdown || data?.markdown;
     if (!markdown) {
-      return { success: false, error: 'No content found on page' };
+      return { success: false, error: 'Geen content gevonden op pagina' };
     }
 
     return { success: true, data: markdown };

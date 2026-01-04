@@ -45,8 +45,12 @@ Deno.serve(async (req) => {
         url: formattedUrl,
         formats: options?.formats || ['markdown'],
         onlyMainContent: options?.onlyMainContent ?? true,
-        waitFor: options?.waitFor,
-        location: options?.location,
+        waitFor: options?.waitFor || 3000, // Wait for JS to load
+        timeout: 30000,
+        // Use stealth mode to bypass anti-bot
+        actions: [
+          { type: 'wait', milliseconds: 2000 }
+        ],
       }),
     });
 
@@ -60,9 +64,37 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Scrape successful');
+    // Check if we got blocked (captcha, 403, etc.)
+    const markdown = data?.data?.markdown || data?.markdown || '';
+    const statusCode = data?.data?.metadata?.statusCode || data?.metadata?.statusCode;
+    
+    if (statusCode === 403 || markdown.includes('captcha') || markdown.includes('geo.captcha-delivery.com')) {
+      console.error('Site blocked access - captcha detected');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Deze website blokkeert automatische toegang. Probeer een andere advertentie of kopieer de tekst handmatig.',
+          blocked: true
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if we got meaningful content
+    if (markdown.length < 100) {
+      console.error('Insufficient content scraped:', markdown.length, 'chars');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Kon geen inhoud van de pagina ophalen. De website kan geblokkeerd zijn of de URL is onjuist.'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Scrape successful, content length:', markdown.length);
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ success: true, data: { markdown } }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
