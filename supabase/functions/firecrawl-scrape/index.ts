@@ -58,9 +58,27 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       console.error('Firecrawl API error:', data);
+      
+      // Handle specific Firecrawl errors with user-friendly messages
+      const errorCode = data?.code || '';
+      const errorMessage = data?.error || `Request failed with status ${response.status}`;
+      
+      // All engines failed = site blocks all scraping attempts
+      if (errorCode === 'SCRAPE_ALL_ENGINES_FAILED' || errorMessage.includes('All scraping engines failed')) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Deze website (Idealista) blokkeert alle automatische toegang. Kopieer de advertentietekst handmatig en gebruik de "Plak Tekst" optie.',
+            blocked: true,
+            requiresManualInput: true
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ success: false, error: data.error || `Request failed with status ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: errorMessage }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
