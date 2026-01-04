@@ -1,256 +1,151 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   Bot, 
   Copy, 
   CheckCircle2, 
   AlertTriangle, 
   XCircle, 
-  ChevronDown,
-  ChevronUp,
   Sparkles,
-  FileText,
   Building2,
   TrendingUp,
   Calculator,
-  Save
+  Save,
+  Loader2,
+  ExternalLink,
+  Edit3,
+  Wallet,
+  Percent,
+  PiggyBank,
+  CreditCard
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  listingAnalyzerApi, 
+  calculateAnalysis, 
+  type ParsedProperty, 
+  type AnalysisResult,
+  type FinancingSettings 
+} from "@/lib/api/listing-analyzer";
 
-interface ParsedProperty {
-  aankoopprijs: number | null;
-  oppervlakte_m2: number | null;
-  locatie: string | null;
-  huurpotentie_lt: number | null;
-  huurpotentie_st_adr: number | null;
-  bezetting_st_pct: number | null;
-  renovatiekosten: number | null;
-  notariskosten: number | null;
-  makelaarskosten: number | null;
-  imt_pct: number | null;
-  imi_jaarlijks: number | null;
-  energielabel: string | null;
-  bouwjaar: number | null;
-  aantal_slaapkamers: number | null;
-  opmerking: string | null;
-}
-
-interface AnalysisResult {
-  totalInvestment: number;
-  yearlyIncomeLT: number;
-  yearlyIncomeST: number;
-  yearlyIncomeTotal: number;
-  yearlyOpex: number;
-  noi: number;
-  bar: number;
-  nar: number;
-  cashOnCash: number;
-  pricePerM2: number;
-  verdict: "rendabel" | "matig" | "risicovol";
-  verdictReasons: string[];
-}
-
-const AI_PROMPT = `Analyseer deze vastgoedadvertentie uit Portugal. Geef het resultaat in dit exacte JSON-formaat, met alleen getallen of korte tekst. Als een veld ontbreekt, vul dan null in.
-
-{
-  "aankoopprijs": 220000,
-  "oppervlakte_m2": 85,
-  "locatie": "Lissabon",
-  "huurpotentie_lt": 1200,
-  "huurpotentie_st_adr": 95,
-  "bezetting_st_pct": 65,
-  "renovatiekosten": 15000,
-  "notariskosten": 2000,
-  "makelaarskosten": 0,
-  "imt_pct": 6.5,
-  "imi_jaarlijks": 350,
-  "energielabel": "C",
-  "bouwjaar": 1985,
-  "aantal_slaapkamers": 2,
-  "opmerking": "Nabij metro"
-}
-
-Gebruik alleen de bovenstaande veldnamen. Geef geen extra tekst.`;
+const DEFAULT_FINANCING: FinancingSettings = {
+  mode: 'ltv',
+  ltvPercentage: 75,
+  eigenGeldBedrag: 50000,
+  rentePercentage: 3.8,
+  looptijdJaren: 30,
+};
 
 export default function AIAdvertentieAnalyzer() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isInstructionsOpen, setIsInstructionsOpen] = useState(true);
-  const [jsonInput, setJsonInput] = useState("");
-  const [parsedData, setParsedData] = useState<ParsedProperty | null>(null);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [parseError, setParseError] = useState<string | null>(null);
+  
+  // Input state
+  const [url, setUrl] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Result state
+  const [originalJson, setOriginalJson] = useState<ParsedProperty | null>(null);
+  const [overrides, setOverrides] = useState<Partial<ParsedProperty>>({});
+  const [financing, setFinancing] = useState<FinancingSettings>(DEFAULT_FINANCING);
+  
+  // UI state
   const [isSaving, setIsSaving] = useState(false);
+  const [jsonCopied, setJsonCopied] = useState(false);
 
-  const copyPrompt = () => {
-    navigator.clipboard.writeText(AI_PROMPT);
-    toast({
-      title: "Prompt gekopieerd!",
-      description: "Plak deze in Qwen of ChatGPT samen met je screenshot.",
-    });
-  };
+  // Calculate analysis with overrides - memoized for performance
+  const analysis = useMemo<AnalysisResult | null>(() => {
+    if (!originalJson) return null;
+    return calculateAnalysis(originalJson, overrides, financing);
+  }, [originalJson, overrides, financing]);
 
-  const parseJSON = (input: string): ParsedProperty | null => {
+  // Merged data for display
+  const mergedData = useMemo<ParsedProperty | null>(() => {
+    if (!originalJson) return null;
+    return { ...originalJson, ...overrides };
+  }, [originalJson, overrides]);
+
+  // Check for financing warnings
+  const financingWarning = useMemo(() => {
+    if (!analysis) return null;
+    if (analysis.eigenGeld < 0) return "Eigen geld zou negatief zijn - pas je instellingen aan.";
+    if (analysis.lening < 0) return "Lening zou negatief zijn - pas je instellingen aan.";
+    return null;
+  }, [analysis]);
+
+  const handleAnalyze = async () => {
+    if (!url.trim()) {
+      setError("Voer een URL in");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setError(null);
+    setOriginalJson(null);
+    setOverrides({});
+
     try {
-      // Try to extract JSON from the input (in case there's extra text)
-      const jsonMatch = input.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error("Geen geldig JSON formaat gevonden");
-      }
+      const result = await listingAnalyzerApi.analyzeUrl(url.trim());
       
-      const parsed = JSON.parse(jsonMatch[0]);
-      return parsed as ParsedProperty;
-    } catch (e) {
-      return null;
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "Analyse mislukt");
+      }
+
+      setOriginalJson(result.data);
+      
+      toast({
+        title: "Analyse voltooid!",
+        description: "De advertentie is succesvol geanalyseerd.",
+      });
+    } catch (err: any) {
+      console.error("Analysis error:", err);
+      setError(err.message || "Er is een fout opgetreden bij het analyseren");
+      toast({
+        title: "Fout",
+        description: err.message || "Kon de advertentie niet analyseren",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
-  const calculateAnalysis = (data: ParsedProperty): AnalysisResult => {
-    const aankoopprijs = data.aankoopprijs || 0;
-    const renovatiekosten = data.renovatiekosten || 0;
-    const notariskosten = data.notariskosten || 2000;
-    const makelaarskosten = data.makelaarskosten || 0;
-    const imt_pct = data.imt_pct || 6.5;
-    const imt = aankoopprijs * (imt_pct / 100);
-    
-    const totalInvestment = aankoopprijs + renovatiekosten + notariskosten + imt + makelaarskosten;
-    
-    // Yearly income
-    const yearlyIncomeLT = (data.huurpotentie_lt || 0) * 12;
-    const bezetting = (data.bezetting_st_pct || 0) / 100;
-    const yearlyIncomeST = (data.huurpotentie_st_adr || 0) * 30 * bezetting * 12;
-    const yearlyIncomeTotal = Math.max(yearlyIncomeLT, yearlyIncomeST);
-    
-    // OPEX
-    const imi = data.imi_jaarlijks || (aankoopprijs * 0.003);
-    const verzekering = aankoopprijs * 0.001;
-    const onderhoud = aankoopprijs * 0.005;
-    const leegstandBuffer = yearlyIncomeTotal * 0.08;
-    const yearlyOpex = imi + verzekering + onderhoud + leegstandBuffer;
-    
-    const noi = yearlyIncomeTotal - yearlyOpex;
-    
-    // Key metrics
-    const bar = aankoopprijs > 0 ? (yearlyIncomeTotal / aankoopprijs) * 100 : 0;
-    const nar = totalInvestment > 0 ? (noi / totalInvestment) * 100 : 0;
-    
-    // Cash-on-Cash (75% financing)
-    const eigenInbreng = totalInvestment * 0.25;
-    const loanAmount = totalInvestment * 0.75;
-    const annualInterest = 0.038; // 3.8%
-    const loanTerm = 30;
-    const monthlyRate = annualInterest / 12;
-    const numPayments = loanTerm * 12;
-    const monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-    const yearlyDebtService = monthlyPayment * 12;
-    const cashOnCash = eigenInbreng > 0 ? ((noi - yearlyDebtService) / eigenInbreng) * 100 : 0;
-    
-    const pricePerM2 = data.oppervlakte_m2 && data.oppervlakte_m2 > 0 ? aankoopprijs / data.oppervlakte_m2 : 0;
-    
-    // Verdict
-    let positivePoints = 0;
-    let negativePoints = 0;
-    const verdictReasons: string[] = [];
-    
-    if (bar > 8) { positivePoints += 2; verdictReasons.push(`BAR ${bar.toFixed(1)}% is uitstekend (>8%)`); }
-    else if (bar >= 5) { positivePoints += 1; verdictReasons.push(`BAR ${bar.toFixed(1)}% is acceptabel (5-8%)`); }
-    else { negativePoints += 2; verdictReasons.push(`BAR ${bar.toFixed(1)}% is laag (<5%)`); }
-    
-    if (nar > 5) { positivePoints += 2; verdictReasons.push(`NAR ${nar.toFixed(1)}% is uitstekend (>5%)`); }
-    else if (nar >= 3) { positivePoints += 1; verdictReasons.push(`NAR ${nar.toFixed(1)}% is acceptabel (3-5%)`); }
-    else { negativePoints += 2; verdictReasons.push(`NAR ${nar.toFixed(1)}% is laag (<3%)`); }
-    
-    if (cashOnCash > 10) { positivePoints += 2; verdictReasons.push(`Cash-on-Cash ${cashOnCash.toFixed(1)}% is uitstekend (>10%)`); }
-    else if (cashOnCash >= 6) { positivePoints += 1; verdictReasons.push(`Cash-on-Cash ${cashOnCash.toFixed(1)}% is acceptabel (6-10%)`); }
-    else { negativePoints += 2; verdictReasons.push(`Cash-on-Cash ${cashOnCash.toFixed(1)}% is laag (<6%)`); }
-    
-    if (pricePerM2 > 0) {
-      if (pricePerM2 < 2000) { positivePoints += 1; verdictReasons.push(`Prijs/m² €${pricePerM2.toFixed(0)} is gunstig (<€2.000)`); }
-      else if (pricePerM2 <= 2800) { verdictReasons.push(`Prijs/m² €${pricePerM2.toFixed(0)} is marktconform (€2.000-2.800)`); }
-      else { negativePoints += 1; verdictReasons.push(`Prijs/m² €${pricePerM2.toFixed(0)} is hoog (>€2.800)`); }
-    }
-    
-    let verdict: "rendabel" | "matig" | "risicovol";
-    if (positivePoints >= 5 && negativePoints <= 1) {
-      verdict = "rendabel";
-    } else if (negativePoints >= 4) {
-      verdict = "risicovol";
+  const copyJson = () => {
+    if (!originalJson) return;
+    navigator.clipboard.writeText(JSON.stringify(originalJson, null, 2));
+    setJsonCopied(true);
+    setTimeout(() => setJsonCopied(false), 2000);
+    toast({ title: "JSON gekopieerd!" });
+  };
+
+  const handleOverrideChange = (field: keyof ParsedProperty, value: string) => {
+    const numValue = value === "" ? null : parseFloat(value);
+    if (field === 'locatie' || field === 'energielabel' || field === 'opmerking') {
+      setOverrides(prev => ({ ...prev, [field]: value || null }));
     } else {
-      verdict = "matig";
+      setOverrides(prev => ({ ...prev, [field]: numValue }));
     }
-    
-    return {
-      totalInvestment,
-      yearlyIncomeLT,
-      yearlyIncomeST,
-      yearlyIncomeTotal,
-      yearlyOpex,
-      noi,
-      bar,
-      nar,
-      cashOnCash,
-      pricePerM2,
-      verdict,
-      verdictReasons,
-    };
   };
 
-  const handleAnalyze = () => {
-    setParseError(null);
-    
-    if (!jsonInput.trim()) {
-      setParseError("Plak eerst de JSON output van de AI");
-      return;
-    }
-    
-    const parsed = parseJSON(jsonInput);
-    if (!parsed) {
-      setParseError("Kon de JSON niet lezen. Controleer of je de exacte output van de AI hebt geplakt.");
-      return;
-    }
-    
-    if (!parsed.aankoopprijs) {
-      setParseError("Aankoopprijs ontbreekt in de data. Dit is een verplicht veld.");
-      return;
-    }
-    
-    setParsedData(parsed);
-    const result = calculateAnalysis(parsed);
-    setAnalysis(result);
-    setIsInstructionsOpen(false);
-    
-    toast({
-      title: "Analyse voltooid!",
-      description: `Oordeel: ${result.verdict === "rendabel" ? "✅ Rendabel" : result.verdict === "matig" ? "🟠 Matig" : "❌ Risicovol"}`,
-    });
-  };
-
-  const handleNavigateToAnalyzer = () => {
-    if (!parsedData) return;
-    
-    // Build query params for the analyzer
-    const params = new URLSearchParams();
-    params.set("from", "ai-analyzer");
-    if (parsedData.aankoopprijs) params.set("price", String(parsedData.aankoopprijs));
-    if (parsedData.huurpotentie_lt) params.set("rent", String(parsedData.huurpotentie_lt));
-    if (parsedData.locatie) params.set("location", parsedData.locatie);
-    
-    navigate(`/analysator?${params.toString()}`);
+  const handleFinancingChange = (field: keyof FinancingSettings, value: string | number) => {
+    setFinancing(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSaveAsProperty = async () => {
-    if (!user || !parsedData) {
+    if (!user || !mergedData) {
       toast({
         title: "Niet ingelogd",
         description: "Je moet ingelogd zijn om een pand op te slaan.",
@@ -264,16 +159,16 @@ export default function AIAdvertentieAnalyzer() {
     try {
       const { error } = await supabase.from("properties").insert({
         user_id: user.id,
-        naam: parsedData.locatie ? `AI Analyse - ${parsedData.locatie}` : "AI Analyse - Nieuw Pand",
-        locatie: parsedData.locatie || "Onbekend",
-        aankoopprijs: parsedData.aankoopprijs || 0,
-        notaris_kosten: parsedData.notariskosten || 2000,
-        imt_betaald: parsedData.aankoopprijs ? parsedData.aankoopprijs * ((parsedData.imt_pct || 6.5) / 100) : 0,
-        renovatie_kosten: parsedData.renovatiekosten || 0,
-        maandelijkse_huur: parsedData.huurpotentie_lt || 0,
-        st_bezetting_percentage: parsedData.bezetting_st_pct || 0,
-        st_gemiddelde_dagprijs: parsedData.huurpotentie_st_adr || 0,
-        oppervlakte_m2: parsedData.oppervlakte_m2 || null,
+        naam: mergedData.locatie ? `AI Analyse - ${mergedData.locatie}` : "AI Analyse - Nieuw Pand",
+        locatie: mergedData.locatie || "Onbekend",
+        aankoopprijs: mergedData.aankoopprijs || 0,
+        notaris_kosten: mergedData.notariskosten || 2000,
+        imt_betaald: mergedData.aankoopprijs ? mergedData.aankoopprijs * ((mergedData.imt_pct || 6.5) / 100) : 0,
+        renovatie_kosten: mergedData.renovatiekosten || 0,
+        maandelijkse_huur: mergedData.huurpotentie_lt || 0,
+        st_bezetting_percentage: mergedData.bezetting_st_pct || 0,
+        st_gemiddelde_dagprijs: mergedData.huurpotentie_st_adr || 0,
+        oppervlakte_m2: mergedData.oppervlakte_m2 || null,
         analyse_status: "potentieel",
         status: "aankoop",
       });
@@ -298,6 +193,8 @@ export default function AIAdvertentieAnalyzer() {
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
 
+  const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -308,128 +205,57 @@ export default function AIAdvertentieAnalyzer() {
             AI Advertentie Analyzer
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Analyseer vastgoedadvertenties met AI en krijg direct een rendementsanalyse
+            Plak een URL van een vastgoedadvertentie en ontvang direct een analyse
           </p>
         </div>
 
-        {/* Instructions */}
-        <Collapsible open={isInstructionsOpen} onOpenChange={setIsInstructionsOpen}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Hoe werkt dit?</CardTitle>
-                  </div>
-                  {isInstructionsOpen ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">1</div>
-                      <p className="text-sm text-muted-foreground">
-                        Neem een <strong>screenshot</strong> of download de <strong>PDF</strong> van de vastgoedadvertentie (bijv. van Idealista, Imovirtual)
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">2</div>
-                      <p className="text-sm text-muted-foreground">
-                        Upload deze naar <strong>Qwen Chat</strong> (Tongyi app of web) of <strong>ChatGPT</strong>
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">3</div>
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                          Plak deze <strong>exacte prompt</strong> in de AI:
-                        </p>
-                        <div className="relative">
-                          <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto max-h-40 overflow-y-auto">
-                            {AI_PROMPT}
-                          </pre>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="absolute top-2 right-2 gap-1"
-                            onClick={copyPrompt}
-                          >
-                            <Copy className="h-3 w-3" />
-                            Kopieer
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">4</div>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Kopieer de JSON-output</strong> (alleen het deel tussen de accolades {"{ }"})
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">5</div>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Plak hieronder</strong> in het tekstveld en klik op "Analyseren"
-                      </p>
-                    </div>
-                    
-                    <Alert className="mt-4">
-                      <AlertDescription className="text-xs">
-                        💡 <strong>Tip:</strong> Qwen is gratis via de Tongyi-app. Zorg dat je de exacte prompt gebruikt — anders werkt de analyse niet.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* JSON Input */}
+        {/* URL Input */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Plak de JSON-output van de AI
+              <ExternalLink className="h-5 w-5 text-primary" />
+              Listing URL
             </CardTitle>
             <CardDescription>
-              Kopieer de volledige JSON response en plak deze hieronder
+              Plak de URL van de vastgoedadvertentie (bijv. idealista.pt, imovirtual.com)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Textarea
-              placeholder='{"aankoopprijs": 220000, "oppervlakte_m2": 85, ...}'
-              value={jsonInput}
-              onChange={(e) => setJsonInput(e.target.value)}
-              className="min-h-[150px] font-mono text-sm"
-            />
+            <div className="flex gap-2">
+              <Input
+                type="url"
+                placeholder="https://www.idealista.pt/imovel/..."
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="flex-1"
+                disabled={isAnalyzing}
+              />
+              <Button onClick={handleAnalyze} disabled={isAnalyzing} className="gap-2">
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Analyseren...
+                  </>
+                ) : (
+                  <>
+                    <Calculator className="h-4 w-4" />
+                    Analyseer
+                  </>
+                )}
+              </Button>
+            </div>
             
-            {parseError && (
+            {error && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>{parseError}</AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
-            <Button onClick={handleAnalyze} className="w-full gap-2">
-              <Calculator className="h-4 w-4" />
-              Analyseren
-            </Button>
           </CardContent>
         </Card>
 
-        {/* Analysis Results */}
-        {analysis && parsedData && (
+        {/* Results */}
+        {originalJson && analysis && mergedData && (
           <div className="space-y-6">
             {/* Verdict Card */}
             <Card className={`border-2 ${
@@ -440,168 +266,476 @@ export default function AIAdvertentieAnalyzer() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
                   {analysis.verdict === "rendabel" ? (
-                    <CheckCircle2 className="h-12 w-12 text-green-500" />
+                    <CheckCircle2 className="h-12 w-12 text-green-600" />
                   ) : analysis.verdict === "matig" ? (
-                    <AlertTriangle className="h-12 w-12 text-yellow-500" />
+                    <AlertTriangle className="h-12 w-12 text-yellow-600" />
                   ) : (
-                    <XCircle className="h-12 w-12 text-red-500" />
+                    <XCircle className="h-12 w-12 text-red-600" />
                   )}
                   <div>
                     <h2 className="text-2xl font-bold">
-                      {analysis.verdict === "rendabel" ? "✅ Dit pand is rendabel" :
-                       analysis.verdict === "matig" ? "🟠 Dit pand is matig" :
-                       "❌ Dit pand is risicovol"}
+                      {analysis.verdict === "rendabel" ? "Rendabel" :
+                       analysis.verdict === "matig" ? "Matig" : "Risicovol"}
                     </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {analysis.verdict === "rendabel" 
-                        ? "Aanbevolen voor langetermijnbelegging" 
-                        : analysis.verdict === "matig"
-                        ? "Overweeg alleen als je gelooft in waardegroei"
-                        : "Niet aanbevolen zonder significante onderhandeling"}
+                    <p className="text-muted-foreground">
+                      {mergedData.locatie && `${mergedData.locatie} • `}
+                      {mergedData.aankoopprijs && formatCurrency(mergedData.aankoopprijs)}
+                      {mergedData.oppervlakte_m2 && ` • ${mergedData.oppervlakte_m2} m²`}
                     </p>
                   </div>
                 </div>
-                
-                <div className="mt-4 space-y-1">
-                  {analysis.verdictReasons.map((reason, idx) => (
-                    <p key={idx} className="text-sm text-muted-foreground">• {reason}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {analysis.verdictReasons.map((reason, i) => (
+                    <Badge key={i} variant="outline" className="text-xs">
+                      {reason}
+                    </Badge>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Key Metrics */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardContent className="pt-4">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Totale Investering</p>
-                  <p className="text-2xl font-bold mt-1">{formatCurrency(analysis.totalInvestment)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-4">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">BAR</p>
-                  <p className="text-2xl font-bold mt-1">{analysis.bar.toFixed(1)}%</p>
-                  <Badge variant={analysis.bar > 8 ? "default" : analysis.bar >= 5 ? "secondary" : "destructive"} className="mt-1">
-                    {analysis.bar > 8 ? "Excellent" : analysis.bar >= 5 ? "Acceptabel" : "Laag"}
-                  </Badge>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-4">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">NAR</p>
-                  <p className="text-2xl font-bold mt-1">{analysis.nar.toFixed(1)}%</p>
-                  <Badge variant={analysis.nar > 5 ? "default" : analysis.nar >= 3 ? "secondary" : "destructive"} className="mt-1">
-                    {analysis.nar > 5 ? "Excellent" : analysis.nar >= 3 ? "Acceptabel" : "Laag"}
-                  </Badge>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-4">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Cash-on-Cash</p>
-                  <p className="text-2xl font-bold mt-1">{analysis.cashOnCash.toFixed(1)}%</p>
-                  <Badge variant={analysis.cashOnCash > 10 ? "default" : analysis.cashOnCash >= 6 ? "secondary" : "destructive"} className="mt-1">
-                    {analysis.cashOnCash > 10 ? "Excellent" : analysis.cashOnCash >= 6 ? "Acceptabel" : "Laag"}
-                  </Badge>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Main Content Tabs */}
+            <Tabs defaultValue="metrics" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="metrics">KPI's</TabsTrigger>
+                <TabsTrigger value="financing">Financiering</TabsTrigger>
+                <TabsTrigger value="overrides">Aanpassen</TabsTrigger>
+                <TabsTrigger value="json">JSON</TabsTrigger>
+              </TabsList>
 
-            {/* Detailed Breakdown */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Pandgegevens
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Locatie</span>
-                    <span className="font-medium">{parsedData.locatie || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Aankoopprijs</span>
-                    <span className="font-medium">{formatCurrency(parsedData.aankoopprijs || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Oppervlakte</span>
-                    <span className="font-medium">{parsedData.oppervlakte_m2 || "-"} m²</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Prijs per m²</span>
-                    <span className="font-medium">{analysis.pricePerM2 > 0 ? formatCurrency(analysis.pricePerM2) : "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Slaapkamers</span>
-                    <span className="font-medium">{parsedData.aantal_slaapkamers || "-"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Energielabel</span>
-                    <span className="font-medium">{parsedData.energielabel || "-"}</span>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Metrics Tab */}
+              <TabsContent value="metrics" className="space-y-4">
+                {/* Key Metrics */}
+                <div className="grid gap-4 md:grid-cols-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-sm text-muted-foreground">Totale Investering</div>
+                      <div className="text-2xl font-bold">{formatCurrency(analysis.totalInvestment)}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-sm text-muted-foreground">BAR</div>
+                      <div className="text-2xl font-bold">{formatPercent(analysis.bar)}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-sm text-muted-foreground">NAR</div>
+                      <div className="text-2xl font-bold">{formatPercent(analysis.nar)}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-sm text-muted-foreground">Cash-on-Cash</div>
+                      <div className="text-2xl font-bold">{formatPercent(analysis.cashOnCash)}</div>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Jaarlijkse Analyse
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Inkomsten (LT)</span>
-                    <span className="font-medium text-green-600">{formatCurrency(analysis.yearlyIncomeLT)}</span>
-                  </div>
-                  {analysis.yearlyIncomeST > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Inkomsten (ST)</span>
-                      <span className="font-medium text-green-600">{formatCurrency(analysis.yearlyIncomeST)}</span>
+                {/* Financial Details */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        Inkomen
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Lange termijn (jaar)</span>
+                        <span className="font-medium">{formatCurrency(analysis.yearlyIncomeLT)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Korte termijn (jaar)</span>
+                        <span className="font-medium">{formatCurrency(analysis.yearlyIncomeST)}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="text-muted-foreground">NOI</span>
+                        <span className="font-bold">{formatCurrency(analysis.noi)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Wallet className="h-4 w-4 text-primary" />
+                        Financiering
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Eigen geld</span>
+                        <span className="font-medium">{formatCurrency(analysis.eigenGeld)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Lening</span>
+                        <span className="font-medium">{formatCurrency(analysis.lening)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Effectieve LTV</span>
+                        <span className="font-medium">{formatPercent(analysis.effectieveLTV)}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="text-muted-foreground">Maandlast</span>
+                        <span className="font-bold">{formatCurrency(analysis.maandlast)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Financing Tab */}
+              <TabsContent value="financing" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      Financieringsmethode
+                    </CardTitle>
+                    <CardDescription>
+                      Kies hoe je de financiering wilt berekenen
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <RadioGroup 
+                      value={financing.mode} 
+                      onValueChange={(v) => handleFinancingChange('mode', v as 'ltv' | 'eigengeld')}
+                      className="grid gap-4 md:grid-cols-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="ltv" id="ltv" />
+                        <Label htmlFor="ltv" className="flex items-center gap-2 cursor-pointer">
+                          <Percent className="h-4 w-4 text-muted-foreground" />
+                          Gebruik LTV %
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="eigengeld" id="eigengeld" />
+                        <Label htmlFor="eigengeld" className="flex items-center gap-2 cursor-pointer">
+                          <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                          Gebruik Eigen geld €
+                        </Label>
+                      </div>
+                    </RadioGroup>
+
+                    {financingWarning && (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>{financingWarning}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {financing.mode === 'ltv' ? (
+                        <div className="space-y-2">
+                          <Label>LTV Percentage</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              value={financing.ltvPercentage}
+                              onChange={(e) => handleFinancingChange('ltvPercentage', parseFloat(e.target.value) || 0)}
+                              className="flex-1"
+                            />
+                            <span className="text-muted-foreground">%</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Lening = aankoopprijs × LTV%
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Label>Eigen geld</Label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">€</span>
+                            <Input
+                              type="number"
+                              value={financing.eigenGeldBedrag}
+                              onChange={(e) => handleFinancingChange('eigenGeldBedrag', parseFloat(e.target.value) || 0)}
+                              className="flex-1"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Lening = totale investering − eigen geld
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label>Rente percentage</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={financing.rentePercentage}
+                            onChange={(e) => handleFinancingChange('rentePercentage', parseFloat(e.target.value) || 0)}
+                            className="flex-1"
+                          />
+                          <span className="text-muted-foreground">%</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Looptijd</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            value={financing.looptijdJaren}
+                            onChange={(e) => handleFinancingChange('looptijdJaren', parseInt(e.target.value) || 30)}
+                            className="flex-1"
+                          />
+                          <span className="text-muted-foreground">jaar</span>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="text-muted-foreground">Totaal Inkomsten</span>
-                    <span className="font-medium text-green-600">{formatCurrency(analysis.yearlyIncomeTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kosten (OPEX)</span>
-                    <span className="font-medium text-red-600">-{formatCurrency(analysis.yearlyOpex)}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="font-medium">NOI</span>
-                    <span className="font-bold">{formatCurrency(analysis.noi)}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleNavigateToAnalyzer} className="flex-1 gap-2">
-                <Calculator className="h-4 w-4" />
-                Uitgebreide Analyse in Rendementsanalysator
-              </Button>
+                    {/* Financing Summary */}
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                      <h4 className="font-medium">Samenvatting</h4>
+                      <div className="grid gap-2 text-sm md:grid-cols-4">
+                        <div>
+                          <span className="text-muted-foreground">Totale investering:</span>
+                          <div className="font-medium">{formatCurrency(analysis.totalInvestment)}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Eigen geld:</span>
+                          <div className="font-medium">{formatCurrency(analysis.eigenGeld)}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Lening:</span>
+                          <div className="font-medium">{formatCurrency(analysis.lening)}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Effectieve LTV:</span>
+                          <div className="font-medium">{formatPercent(analysis.effectieveLTV)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Overrides Tab */}
+              <TabsContent value="overrides" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Edit3 className="h-4 w-4 text-primary" />
+                      Waarden Aanpassen
+                    </CardTitle>
+                    <CardDescription>
+                      Pas waardes aan voor een nauwkeurigere analyse. Wijzigingen worden direct doorberekend.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {/* Core Fields */}
+                      <div className="space-y-2">
+                        <Label>Aankoopprijs</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.aankoopprijs || '')}
+                          value={overrides.aankoopprijs ?? ''}
+                          onChange={(e) => handleOverrideChange('aankoopprijs', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Oppervlakte (m²)</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.oppervlakte_m2 || '')}
+                          value={overrides.oppervlakte_m2 ?? ''}
+                          onChange={(e) => handleOverrideChange('oppervlakte_m2', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Locatie</Label>
+                        <Input
+                          type="text"
+                          placeholder={originalJson.locatie || ''}
+                          value={overrides.locatie ?? ''}
+                          onChange={(e) => handleOverrideChange('locatie', e.target.value)}
+                        />
+                      </div>
+
+                      {/* Rental */}
+                      <div className="space-y-2">
+                        <Label>Huur LT (maand)</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.huurpotentie_lt || '')}
+                          value={overrides.huurpotentie_lt ?? ''}
+                          onChange={(e) => handleOverrideChange('huurpotentie_lt', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>ST Dagprijs (ADR)</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.huurpotentie_st_adr || '')}
+                          value={overrides.huurpotentie_st_adr ?? ''}
+                          onChange={(e) => handleOverrideChange('huurpotentie_st_adr', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>ST Bezetting (%)</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.bezetting_st_pct || '')}
+                          value={overrides.bezetting_st_pct ?? ''}
+                          onChange={(e) => handleOverrideChange('bezetting_st_pct', e.target.value)}
+                        />
+                      </div>
+
+                      {/* Costs */}
+                      <div className="space-y-2">
+                        <Label>Renovatiekosten</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.renovatiekosten || '')}
+                          value={overrides.renovatiekosten ?? ''}
+                          onChange={(e) => handleOverrideChange('renovatiekosten', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Notariskosten</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.notariskosten || '')}
+                          value={overrides.notariskosten ?? ''}
+                          onChange={(e) => handleOverrideChange('notariskosten', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Makelaarskosten</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.makelaarskosten || '')}
+                          value={overrides.makelaarskosten ?? ''}
+                          onChange={(e) => handleOverrideChange('makelaarskosten', e.target.value)}
+                        />
+                      </div>
+
+                      {/* Taxes */}
+                      <div className="space-y-2">
+                        <Label>IMT (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder={String(originalJson.imt_pct || '')}
+                          value={overrides.imt_pct ?? ''}
+                          onChange={(e) => handleOverrideChange('imt_pct', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>IMI (jaarlijks)</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.imi_jaarlijks || '')}
+                          value={overrides.imi_jaarlijks ?? ''}
+                          onChange={(e) => handleOverrideChange('imi_jaarlijks', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Slaapkamers</Label>
+                        <Input
+                          type="number"
+                          placeholder={String(originalJson.aantal_slaapkamers || '')}
+                          value={overrides.aantal_slaapkamers ?? ''}
+                          onChange={(e) => handleOverrideChange('aantal_slaapkamers', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {Object.keys(overrides).length > 0 && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setOverrides({})}
+                          className="gap-2"
+                        >
+                          Reset aanpassingen
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* JSON Tab */}
+              <TabsContent value="json" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        Gegenereerde JSON
+                      </CardTitle>
+                      <Button variant="outline" size="sm" onClick={copyJson} className="gap-2">
+                        {jsonCopied ? (
+                          <>
+                            <CheckCircle2 className="h-3 w-3" />
+                            Gekopieerd
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            Kopieer
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <CardDescription>
+                      Dit is de automatisch gegenereerde JSON van de advertentie-analyse
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <pre className="bg-muted p-4 rounded-lg text-xs overflow-x-auto font-mono">
+                      {JSON.stringify(originalJson, null, 2)}
+                    </pre>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-3">
               <Button 
                 onClick={handleSaveAsProperty} 
-                variant="outline" 
-                className="flex-1 gap-2"
                 disabled={isSaving}
+                className="gap-2"
               >
-                <Save className="h-4 w-4" />
-                {isSaving ? "Opslaan..." : "Opslaan als Pand"}
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Opslaan als Pand
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  params.set("from", "ai-analyzer");
+                  if (mergedData.aankoopprijs) params.set("price", String(mergedData.aankoopprijs));
+                  if (mergedData.huurpotentie_lt) params.set("rent", String(mergedData.huurpotentie_lt));
+                  if (mergedData.locatie) params.set("location", mergedData.locatie);
+                  navigate(`/analysator?${params.toString()}`);
+                }}
+                className="gap-2"
+              >
+                <Building2 className="h-4 w-4" />
+                Uitgebreide Analyse
               </Button>
             </div>
 
             {/* Disclaimer */}
             <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Let op</AlertTitle>
               <AlertDescription className="text-xs">
-                AI kan fouten maken. Controleer altijd aankoopprijs, oppervlakte en huur. 
-                Deze analyse is een eerste inschatting. Gebruik de 'Volledige Rendementsanalyse' voor aankoopbeslissingen.
+                ⚠️ <strong>Let op:</strong> Deze analyse is gebaseerd op automatisch geëxtraheerde data en AI-schattingen. 
+                Controleer alle waarden en pas ze aan indien nodig. Gebruik dit als startpunt, niet als definitief advies.
               </AlertDescription>
             </Alert>
           </div>
