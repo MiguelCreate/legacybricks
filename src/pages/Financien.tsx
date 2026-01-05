@@ -49,6 +49,7 @@ import { PortfolioTaxSummary } from "@/components/financien/PortfolioTaxSummary"
 import { PropertyValueAnalysis } from "@/components/financien/PropertyValueAnalysis";
 import { CashflowBreakdown } from "@/components/dashboard/CashflowBreakdown";
 import { CashflowBarChart } from "@/components/dashboard/CashflowBarChart";
+import { calculatePropertyCashflow, TenantRent } from "@/lib/financialCalculations";
 
 type Expense = Tables<"expenses">;
 type Payment = Tables<"payments">;
@@ -208,7 +209,37 @@ const Financien = () => {
     })
     .reduce((sum, p) => sum + Number(p.bedrag), 0);
 
-  const netCashflow = totalMonthlyRent - totalMonthlyLoanPayments - monthlyExpenses;
+  // Calculate netto cashflow using same logic as Dashboard (per property with IRS, IMI, etc.)
+  const netCashflow = properties.reduce((sum, property) => {
+    const propertyTenants = userTenants.filter(t => t.property_id === property.id);
+    const actualRent = propertyTenants.reduce((s, t) => s + Number(t.huurbedrag || 0), 0);
+    
+    const tenantRents: TenantRent[] = propertyTenants.map(t => ({
+      monthlyRent: Number(t.huurbedrag || 0)
+    }));
+    
+    const loan = userLoans.find((l) => l.property_id === property.id);
+    
+    const cashflowResult = calculatePropertyCashflow(
+      actualRent,
+      Number(property.subsidie_bedrag) || 0,
+      loan ? Number(loan.maandlast) : 0,
+      Number(property.aankoopprijs),
+      Number(property.imi_percentage) || 0.003,
+      Number(property.verzekering_jaarlijks) || 0,
+      Number(property.onderhoud_jaarlijks) || 0,
+      Number(property.leegstand_buffer_percentage) || 5,
+      Number(property.beheerkosten_percentage) || 0,
+      0,
+      { jaarHuurinkomst: new Date().getFullYear() },
+      tenantRents
+    );
+    
+    return sum + cashflowResult.netCashflow;
+  }, 0);
+  
+  // Calculate total monthly costs for beginner view (difference between rent and net cashflow)
+  const totalMonthlyCosts = totalMonthlyRent - netCashflow;
   const portfolioValue = properties.reduce(
     (sum, p) => sum + Number(p.waardering || p.aankoopprijs),
     0
@@ -450,10 +481,10 @@ const Financien = () => {
 
           {mode === "beginner" ? (
             <>
-              <BeginnerFinancienView
+            <BeginnerFinancienView
                 totalMonthlyRent={totalMonthlyRent}
                 totalMonthlyLoanPayments={totalMonthlyLoanPayments}
-                monthlyExpenses={monthlyExpenses}
+                monthlyExpenses={totalMonthlyCosts}
                 netCashflow={netCashflow}
                 portfolioValue={portfolioValue}
                 grossYield={grossYield}
