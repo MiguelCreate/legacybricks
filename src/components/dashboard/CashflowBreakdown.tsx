@@ -22,6 +22,8 @@ interface PropertyBreakdown {
   totalRent: number;
   loanPayment: number;
   imiMonthly: number;
+  irsMonthly: number;
+  irsTarief: number;
   insuranceMonthly: number;
   maintenanceMonthly: number;
   vacancyBuffer: number;
@@ -62,7 +64,9 @@ export const CashflowBreakdown = ({ properties, tenants, loans }: CashflowBreakd
       Number(property.verzekering_jaarlijks) || 0,
       Number(property.onderhoud_jaarlijks) || 0,
       Number(property.leegstand_buffer_percentage) || 5,
-      Number(property.beheerkosten_percentage) || 0
+      Number(property.beheerkosten_percentage) || 0,
+      0, // other expenses
+      { jaarHuurinkomst: new Date().getFullYear() }
     );
 
     return {
@@ -72,6 +76,8 @@ export const CashflowBreakdown = ({ properties, tenants, loans }: CashflowBreakd
       totalRent,
       loanPayment,
       imiMonthly,
+      irsMonthly: cashflowResult.expenses.irs,
+      irsTarief: cashflowResult.irsTarief,
       insuranceMonthly,
       maintenanceMonthly,
       vacancyBuffer,
@@ -82,7 +88,7 @@ export const CashflowBreakdown = ({ properties, tenants, loans }: CashflowBreakd
 
   const totalIncome = breakdowns.reduce((sum, b) => sum + b.totalRent, 0);
   const totalCosts = breakdowns.reduce((sum, b) => 
-    sum + b.loanPayment + b.imiMonthly + b.insuranceMonthly + b.maintenanceMonthly + b.vacancyBuffer + b.managementCost, 0
+    sum + b.loanPayment + b.imiMonthly + b.irsMonthly + b.insuranceMonthly + b.maintenanceMonthly + b.vacancyBuffer + b.managementCost, 0
   );
   const totalNetCashflow = breakdowns.reduce((sum, b) => sum + b.netCashflow, 0);
 
@@ -189,6 +195,12 @@ export const CashflowBreakdown = ({ properties, tenants, loans }: CashflowBreakd
                         <span className="text-red-600">-{formatCurrency(breakdown.imiMonthly)}</span>
                       </div>
                     )}
+                    {breakdown.irsMonthly > 0 && (
+                      <div className="flex justify-between text-xs pl-4">
+                        <span className="text-muted-foreground">IRS ({breakdown.irsTarief}%)</span>
+                        <span className="text-red-600">-{formatCurrency(breakdown.irsMonthly)}</span>
+                      </div>
+                    )}
                     {breakdown.insuranceMonthly > 0 && (
                       <div className="flex justify-between text-xs pl-4">
                         <span className="text-muted-foreground">Verzekering</span>
@@ -220,7 +232,7 @@ export const CashflowBreakdown = ({ properties, tenants, loans }: CashflowBreakd
 
             {/* Formula explanation */}
             <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded">
-              <strong>Formule:</strong> Huurinkomsten actieve huurders − Hypotheek − IMI − Verzekering − Onderhoud − Leegstandbuffer − Beheerkosten = Netto Cashflow
+              <strong>Formule:</strong> Huurinkomsten − Hypotheek − IMI − IRS − Verzekering − Onderhoud − Leegstandbuffer − Beheerkosten = Netto Cashflow
             </div>
           </CardContent>
         </CollapsibleContent>
