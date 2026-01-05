@@ -19,6 +19,7 @@ import { StilteModus } from "@/components/dashboard/StilteModus";
 import { VrijheidsDashboard } from "@/components/dashboard/VrijheidsDashboard";
 import { AudioSamenvatting } from "@/components/dashboard/AudioSamenvatting";
 import { VvEMeldingen } from "@/components/dashboard/VvEMeldingen";
+import { CashflowBreakdown } from "@/components/dashboard/CashflowBreakdown";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -361,6 +362,13 @@ const Dashboard = () => {
                     }}
                   />
                 </div>
+
+                {/* Cashflow Breakdown */}
+                <CashflowBreakdown 
+                  properties={properties} 
+                  tenants={userTenants} 
+                  loans={userLoans} 
+                />
               </section>
 
               {/* ===================== SECTIE 2: ACTIES & MELDINGEN ===================== */}
