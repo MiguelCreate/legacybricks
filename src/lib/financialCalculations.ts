@@ -237,7 +237,8 @@ export function calculatePropertyCashflow(
     dhdContract: irsOptions?.dhdContract ?? false,
   });
   
-  const irsMonthly = irsResult.maandelijksBedrag;
+  // Explicitly calculate monthly IRS by dividing yearly amount by 12
+  const irsMonthly = irsResult.jaarlijksBedrag / 12;
   
   const totalExpenses = mortgagePayment + imi + irsMonthly + insurance + maintenance + 
                         vacancyBuffer + management + otherExpensesMonthly;
