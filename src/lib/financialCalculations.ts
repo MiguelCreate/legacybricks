@@ -186,13 +186,23 @@ export interface PropertyCashflow {
   expenses: {
     mortgage: number;
     imi: number;
+    irs: number;
     insurance: number;
     maintenance: number;
     vacancyBuffer: number;
     management: number;
     other: number;
   };
+  irsTarief: number;
   netCashflow: number;
+}
+
+export interface IRSOptions {
+  jaarHuurinkomst?: number; // Year for which to calculate (default: current year)
+  contractduurJaren?: number;
+  aantalVerlengingen?: number;
+  englobamento?: boolean;
+  dhdContract?: boolean;
 }
 
 export function calculatePropertyCashflow(
@@ -205,8 +215,12 @@ export function calculatePropertyCashflow(
   maintenanceYearly: number,
   vacancyBufferPercent: number,
   managementPercent: number,
-  otherExpensesMonthly: number = 0
+  otherExpensesMonthly: number = 0,
+  irsOptions?: IRSOptions
 ): PropertyCashflow {
+  // Import dynamically to avoid circular dependency
+  const { calculateIRS } = require('@/lib/portugueseTaxCalculations');
+  
   const grossIncome = monthlyRent + subsidyMonthly;
   
   const imi = (propertyValue * imiRate) / 12;
@@ -215,7 +229,20 @@ export function calculatePropertyCashflow(
   const vacancyBuffer = grossIncome * (vacancyBufferPercent / 100);
   const management = grossIncome * (managementPercent / 100);
   
-  const totalExpenses = mortgagePayment + imi + insurance + maintenance + 
+  // Calculate IRS using the Portuguese tax calculation
+  const currentYear = new Date().getFullYear();
+  const irsResult = calculateIRS({
+    jaarHuurinkomst: irsOptions?.jaarHuurinkomst ?? currentYear,
+    maandHuur: monthlyRent,
+    contractduurJaren: irsOptions?.contractduurJaren ?? 1,
+    aantalVerlengingen: irsOptions?.aantalVerlengingen ?? 0,
+    englobamento: irsOptions?.englobamento ?? false,
+    dhdContract: irsOptions?.dhdContract ?? false,
+  });
+  
+  const irsMonthly = irsResult.maandelijksBedrag;
+  
+  const totalExpenses = mortgagePayment + imi + irsMonthly + insurance + maintenance + 
                         vacancyBuffer + management + otherExpensesMonthly;
   
   return {
@@ -223,12 +250,14 @@ export function calculatePropertyCashflow(
     expenses: {
       mortgage: Math.round(mortgagePayment * 100) / 100,
       imi: Math.round(imi * 100) / 100,
+      irs: Math.round(irsMonthly * 100) / 100,
       insurance: Math.round(insurance * 100) / 100,
       maintenance: Math.round(maintenance * 100) / 100,
       vacancyBuffer: Math.round(vacancyBuffer * 100) / 100,
       management: Math.round(management * 100) / 100,
       other: Math.round(otherExpensesMonthly * 100) / 100,
     },
+    irsTarief: irsResult.tarief,
     netCashflow: Math.round((grossIncome - totalExpenses) * 100) / 100,
   };
 }
