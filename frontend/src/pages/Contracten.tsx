@@ -603,202 +603,370 @@ END:VCALENDAR`;
 
         {/* Add/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="glass-strong max-w-lg">
+          <DialogContent className="glass-strong max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingContract ? "Contract Bewerken" : "Nieuw Contract"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Pand *</Label>
-                  <InfoTooltip
-                    title="Pand"
-                    content="Selecteer het pand waarvoor dit contract geldt."
-                  />
-                </div>
-                <Select
-                  value={formData.property_id}
-                  onValueChange={(value) => setFormData({ ...formData, property_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecteer pand" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties.map((property) => (
-                      <SelectItem key={property.id} value={property.id}>
-                        {property.naam}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Tabs defaultValue="algemeen" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="algemeen">Algemeen</TabsTrigger>
+                  <TabsTrigger value="indexatie">Huurindexatie</TabsTrigger>
+                </TabsList>
+                
+                {/* Tab: Algemeen */}
+                <TabsContent value="algemeen" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label>Pand *</Label>
+                      <InfoTooltip
+                        title="Pand"
+                        content="Selecteer het pand waarvoor dit contract geldt."
+                      />
+                    </div>
+                    <Select
+                      value={formData.property_id}
+                      onValueChange={(value) => setFormData({ ...formData, property_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecteer pand" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {properties.map((property) => (
+                          <SelectItem key={property.id} value={property.id}>
+                            {property.naam}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <Label>Huurder (optioneel)</Label>
-                <Select
-                  value={formData.tenant_id}
-                  onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecteer huurder" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tenants
-                      .filter((t) => t.property_id === formData.property_id)
-                      .map((tenant) => (
-                        <SelectItem key={tenant.id} value={tenant.id}>
-                          {tenant.naam}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div className="space-y-2">
+                    <Label>Huurder (optioneel)</Label>
+                    <Select
+                      value={formData.tenant_id}
+                      onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecteer huurder" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tenants
+                          .filter((t) => t.property_id === formData.property_id)
+                          .map((tenant) => (
+                            <SelectItem key={tenant.id} value={tenant.id}>
+                              {tenant.naam}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Type *</Label>
-                  <InfoTooltip
-                    title="Contracttype"
-                    content="Langdurig = >1 jaar, Kort = <1 jaar, Airbnb = toeristische verhuur, Koop = koopcontract."
-                  />
-                </div>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value: Contract["type"]) => setFormData({ ...formData, type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="langdurig">Langdurig (&gt;1 jaar)</SelectItem>
-                    <SelectItem value="kort">Kort (&lt;1 jaar)</SelectItem>
-                    <SelectItem value="airbnb">Airbnb/Toeristisch</SelectItem>
-                    <SelectItem value="koop">Koopcontract</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label>Type *</Label>
+                      <InfoTooltip
+                        title="Contracttype"
+                        content="Langdurig = >1 jaar, Kort = <1 jaar, Airbnb = toeristische verhuur, Koop = koopcontract."
+                      />
+                    </div>
+                    <Select
+                      value={formData.type}
+                      onValueChange={(value: Contract["type"]) => setFormData({ ...formData, type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="langdurig">Langdurig (&gt;1 jaar)</SelectItem>
+                        <SelectItem value="kort">Kort (&lt;1 jaar)</SelectItem>
+                        <SelectItem value="airbnb">Airbnb/Toeristisch</SelectItem>
+                        <SelectItem value="koop">Koopcontract</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Startdatum *</Label>
-                  <Input
-                    type="date"
-                    value={formData.startdatum}
-                    onChange={(e) => setFormData({ ...formData, startdatum: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Einddatum *</Label>
-                  <Input
-                    type="date"
-                    value={formData.einddatum}
-                    onChange={(e) => setFormData({ ...formData, einddatum: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Startdatum *</Label>
+                      <Input
+                        type="date"
+                        value={formData.startdatum}
+                        onChange={(e) => setFormData({ ...formData, startdatum: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Einddatum *</Label>
+                      <Input
+                        type="date"
+                        value={formData.einddatum}
+                        onChange={(e) => setFormData({ ...formData, einddatum: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
 
-              {/* Financiële velden */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label>Huurprijs</Label>
-                    <InfoTooltip
-                      title="Huurprijs"
-                      content="Maandelijkse huurprijs zoals vastgelegd in het contract."
+                  {/* Financiële velden */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label>Huurprijs</Label>
+                        <InfoTooltip
+                          title="Huurprijs"
+                          content="Maandelijkse huurprijs zoals vastgelegd in het contract."
+                        />
+                      </div>
+                      <div className="relative">
+                        <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          value={formData.huurprijs || ""}
+                          onChange={(e) => setFormData({ ...formData, huurprijs: Number(e.target.value) })}
+                          placeholder="0"
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label>Indexatie %</Label>
+                        <InfoTooltip
+                          title="Indexatie"
+                          content="Jaarlijkse huurverhoging percentage (bijv. 2% per jaar)."
+                        />
+                      </div>
+                      <div className="relative">
+                        <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={formData.indexatie_percentage || ""}
+                          onChange={(e) => setFormData({ ...formData, indexatie_percentage: Number(e.target.value) })}
+                          placeholder="2"
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label>Waarborgsom</Label>
+                        <InfoTooltip
+                          title="Waarborgsom"
+                          content="Borg/depositum betaald door de huurder."
+                        />
+                      </div>
+                      <div className="relative">
+                        <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          value={formData.waarborgsom || ""}
+                          onChange={(e) => setFormData({ ...formData, waarborgsom: Number(e.target.value) })}
+                          placeholder="0"
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label>Document link (optioneel)</Label>
+                      <InfoTooltip
+                        title="Document link"
+                        content="Voeg een link toe naar het contract bestand op Google Drive, OneDrive, Dropbox of een andere online locatie."
+                      />
+                    </div>
+                    <div className="relative">
+                      <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={formData.document_link}
+                        onChange={(e) => setFormData({ ...formData, document_link: e.target.value })}
+                        placeholder="https://drive.google.com/... of https://onedrive.com/..."
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-accent/50">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-foreground">Herinnering</p>
+                        <p className="text-sm text-muted-foreground">
+                          1 maand voor einddatum
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={formData.herinnering_ingesteld}
+                      onCheckedChange={(checked) => setFormData({ ...formData, herinnering_ingesteld: checked })}
                     />
                   </div>
-                  <div className="relative">
-                    <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={formData.huurprijs || ""}
-                      onChange={(e) => setFormData({ ...formData, huurprijs: Number(e.target.value) })}
-                      placeholder="0"
-                      className="pl-10"
-                    />
+                </TabsContent>
+                
+                {/* Tab: Huurindexatie */}
+                <TabsContent value="indexatie" className="space-y-4 mt-4">
+                  {/* Waarschuwing voor contracttype */}
+                  {(() => {
+                    const typeValidation = validateContractTypeForIndexation(formData.type);
+                    if (!typeValidation.valid) {
+                      return (
+                        <div className="p-4 rounded-xl bg-warning/10 border border-warning/30">
+                          <div className="flex items-start gap-3">
+                            <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-foreground">{typeValidation.warning}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                    <div className="flex items-start gap-3">
+                      <TrendingUp className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-foreground mb-1">Over huurindexatie</p>
+                        <p className="text-sm text-muted-foreground">
+                          Indexatiepercentage is meestal gebaseerd op inflatie (Portugal: ca. 2–3%). 
+                          Je kunt dit handmatig aanpassen. Portugese wetgeving vereist vaak minimaal 30 dagen voorafgaande kennisgeving. 
+                          Wij raden 60 dagen aan.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label>Indexatie %</Label>
-                    <InfoTooltip
-                      title="Indexatie"
-                      content="Jaarlijkse huurverhoging percentage (bijv. 2% per jaar)."
-                    />
-                  </div>
-                  <div className="relative">
-                    <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={formData.indexatie_percentage || ""}
-                      onChange={(e) => setFormData({ ...formData, indexatie_percentage: Number(e.target.value) })}
-                      placeholder="2"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Label>Waarborgsom</Label>
-                    <InfoTooltip
-                      title="Waarborgsom"
-                      content="Borg/depositum betaald door de huurder."
-                    />
-                  </div>
-                  <div className="relative">
-                    <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={formData.waarborgsom || ""}
-                      onChange={(e) => setFormData({ ...formData, waarborgsom: Number(e.target.value) })}
-                      placeholder="0"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Document link (optioneel)</Label>
-                  <InfoTooltip
-                    title="Document link"
-                    content="Voeg een link toe naar het contract bestand op Google Drive, OneDrive, Dropbox of een andere online locatie."
-                  />
-                </div>
-                <div className="relative">
-                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    value={formData.document_link}
-                    onChange={(e) => setFormData({ ...formData, document_link: e.target.value })}
-                    placeholder="https://drive.google.com/... of https://onedrive.com/..."
-                    className="pl-10"
-                  />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label>Huurindexatie (%)</Label>
+                        <InfoTooltip
+                          title="Indexatie percentage"
+                          content="Percentage waarmee de huur jaarlijks wordt verhoogd."
+                        />
+                      </div>
+                      <div className="relative">
+                        <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={formData.indexatie_percentage || ""}
+                          onChange={(e) => handleIndexationChange("percentage", e.target.value)}
+                          placeholder="2.5"
+                          className="pl-10"
+                        />
+                      </div>
+                      {(() => {
+                        const validation = validateIndexationPercentage(formData.indexatie_percentage);
+                        if (validation.warning) {
+                          return (
+                            <p className="text-sm text-warning flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              {validation.warning}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
 
-              <div className="flex items-center justify-between p-4 rounded-xl bg-accent/50">
-                <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-foreground">Herinnering</p>
-                    <p className="text-sm text-muted-foreground">
-                      1 maand voor einddatum
-                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label>Volgende huurwijziging</Label>
+                        <InfoTooltip
+                          title="Wijzigingsdatum"
+                          content="Datum waarop de huur wordt aangepast."
+                        />
+                      </div>
+                      <Input
+                        type="date"
+                        value={formData.volgende_huurwijziging}
+                        onChange={(e) => handleIndexationChange("date", e.target.value)}
+                      />
+                      {formData.volgende_huurwijziging && (() => {
+                        const validation = validateIndexationDate(formData.volgende_huurwijziging);
+                        if (validation.warning) {
+                          return (
+                            <p className="text-sm text-warning flex items-start gap-1">
+                              <AlertTriangle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                              <span>{validation.warning}</span>
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </div>
-                </div>
-                <Switch
-                  checked={formData.herinnering_ingesteld}
-                  onCheckedChange={(checked) => setFormData({ ...formData, herinnering_ingesteld: checked })}
-                />
-              </div>
 
-              <div className="flex gap-3 pt-4">
+                  {/* Berekend nieuw huurbedrag */}
+                  {formData.huurprijs > 0 && formData.indexatie_percentage > 0 && formData.volgende_huurwijziging && (
+                    <div className="p-4 rounded-xl gradient-primary">
+                      <div className="text-primary-foreground">
+                        <p className="text-sm opacity-90 mb-1">Nieuw huurbedrag na wijziging:</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-3xl font-bold">
+                            €{formData.nieuw_huurbedrag_na_wijziging.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-sm opacity-75">
+                            (was €{formData.huurprijs.toLocaleString("nl-NL")})
+                          </p>
+                        </div>
+                        <p className="text-xs opacity-75 mt-1">
+                          Herinnering wordt ingesteld voor {format(new Date(new Date(formData.volgende_huurwijziging).setMonth(new Date(formData.volgende_huurwijziging).getMonth() - 2)), "d MMMM yyyy", { locale: nl })} (2 maanden van tevoren)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actieknoppen */}
+                  {formData.volgende_huurwijziging && formData.nieuw_huurbedrag_na_wijziging > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          onClick={() => {
+                            if (!formData.property_id) {
+                              toast({
+                                title: "Selecteer eerst een pand",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            const property = properties.find((p) => p.id === formData.property_id);
+                            const link = generateIndexationCalendarLink(
+                              property?.naam || "Pand",
+                              formData.volgende_huurwijziging,
+                              formData.nieuw_huurbedrag_na_wijziging,
+                              formData.huurprijs
+                            );
+                            window.open(link, "_blank");
+                          }}
+                        >
+                          <Calendar className="w-4 h-4" />
+                          Voeg herinnering toe aan Google Calendar
+                        </Button>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={handleShowNotification}
+                      >
+                        <Mail className="w-4 h-4" />
+                        Informeer huurder
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+
+              <div className="flex gap-3 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
@@ -816,6 +984,55 @@ END:VCALENDAR`;
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Notification Dialog */}
+        <Dialog open={showNotificationDialog} onOpenChange={setShowNotificationDialog}>
+          <DialogContent className="glass-strong max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Informeer huurder over huurwijziging</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Kopieer onderstaand bericht en verstuur het naar je huurder via email of WhatsApp:
+              </p>
+              
+              <div className="p-4 rounded-xl bg-accent/50 border">
+                <Textarea
+                  value={notificationText}
+                  onChange={(e) => setNotificationText(e.target.value)}
+                  rows={10}
+                  className="font-mono text-sm"
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowNotificationDialog(false)}
+                >
+                  Sluiten
+                </Button>
+                <Button
+                  className="flex-1 gradient-primary text-primary-foreground gap-2"
+                  onClick={handleCopyNotification}
+                >
+                  {copiedNotification ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Gekopieerd!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Kopieer bericht
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
