@@ -64,7 +64,10 @@ const Contracten = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
-const [formData, setFormData] = useState({
+  const [copiedNotification, setCopiedNotification] = useState(false);
+  const [showNotificationDialog, setShowNotificationDialog] = useState(false);
+  const [notificationText, setNotificationText] = useState("");
+  const [formData, setFormData] = useState({
     property_id: "",
     tenant_id: "",
     type: "langdurig" as Contract["type"],
@@ -75,6 +78,8 @@ const [formData, setFormData] = useState({
     huurprijs: 0,
     indexatie_percentage: 2,
     waarborgsom: 0,
+    volgende_huurwijziging: "",
+    nieuw_huurbedrag_na_wijziging: 0,
   });
 
   useEffect(() => {
