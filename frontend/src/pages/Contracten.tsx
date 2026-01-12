@@ -242,6 +242,8 @@ const resetForm = () => {
       huurprijs: 0,
       indexatie_percentage: 2,
       waarborgsom: 0,
+      volgende_huurwijziging: "",
+      nieuw_huurbedrag_na_wijziging: 0,
     });
   };
 
