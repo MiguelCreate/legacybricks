@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Plus, Search, Calendar, Bell, Building2, User, MoreVertical, Pencil, Trash2, ExternalLink, Link, Euro, Percent, Download } from "lucide-react";
+import { FileText, Plus, Search, Calendar, Bell, Building2, User, MoreVertical, Pencil, Trash2, ExternalLink, Link, Euro, Percent, Download, TrendingUp, Mail, Copy, Check, AlertTriangle } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,14 +24,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 import { format, differenceInDays, addMonths } from "date-fns";
 import { nl } from "date-fns/locale";
+import {
+  calculateNewRent,
+  generateIndexationCalendarLink,
+  generateTenantNotificationText,
+  validateIndexationDate,
+  validateIndexationPercentage,
+  validateContractTypeForIndexation,
+} from "@/lib/indexationHelpers";
 
 type Contract = Tables<"contracts">;
 type Property = Tables<"properties">;
