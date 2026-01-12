@@ -179,6 +179,13 @@ const contractData = {
 
   const handleEdit = (contract: Contract) => {
     setEditingContract(contract);
+    
+    // Bereken nieuw huurbedrag als volgende_huurwijziging is ingesteld
+    let calculatedNewRent = contract.nieuw_huurbedrag_na_wijziging;
+    if (contract.volgende_huurwijziging && contract.huurprijs && contract.indexatie_percentage && !calculatedNewRent) {
+      calculatedNewRent = calculateNewRent(Number(contract.huurprijs), Number(contract.indexatie_percentage));
+    }
+    
 setFormData({
       property_id: contract.property_id,
       tenant_id: contract.tenant_id || "",
@@ -190,6 +197,8 @@ setFormData({
       huurprijs: Number(contract.huurprijs) || 0,
       indexatie_percentage: Number(contract.indexatie_percentage) || 2,
       waarborgsom: Number(contract.waarborgsom) || 0,
+      volgende_huurwijziging: contract.volgende_huurwijziging || "",
+      nieuw_huurbedrag_na_wijziging: Number(calculatedNewRent) || 0,
     });
     setIsDialogOpen(true);
   };
