@@ -138,6 +138,8 @@ const contractData = {
         huurprijs: formData.huurprijs || null,
         indexatie_percentage: formData.indexatie_percentage || null,
         waarborgsom: formData.waarborgsom || null,
+        volgende_huurwijziging: formData.volgende_huurwijziging || null,
+        nieuw_huurbedrag_na_wijziging: formData.nieuw_huurbedrag_na_wijziging || null,
       };
 
       if (editingContract) {
