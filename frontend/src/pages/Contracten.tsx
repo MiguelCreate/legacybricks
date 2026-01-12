@@ -330,6 +330,63 @@ END:VCALENDAR`;
 
   const expiringContracts = filteredContracts.filter((c) => getDaysUntilEnd(c.einddatum) <= 90 && getDaysUntilEnd(c.einddatum) >= 0);
 
+  // Huurindexatie helpers
+  const handleIndexationChange = (field: "percentage" | "date", value: string | number) => {
+    const updates: any = {};
+    
+    if (field === "percentage") {
+      updates.indexatie_percentage = Number(value);
+    } else if (field === "date") {
+      updates.volgende_huurwijziging = value as string;
+    }
+    
+    // Herbereken nieuw huurbedrag als beide waarden aanwezig zijn
+    const newPercentage = field === "percentage" ? Number(value) : formData.indexatie_percentage;
+    const newDate = field === "date" ? value as string : formData.volgende_huurwijziging;
+    
+    if (formData.huurprijs && newPercentage && newDate) {
+      updates.nieuw_huurbedrag_na_wijziging = calculateNewRent(formData.huurprijs, newPercentage);
+    }
+    
+    setFormData({ ...formData, ...updates });
+  };
+
+  const handleShowNotification = () => {
+    const property = properties.find((p) => p.id === formData.property_id);
+    const tenant = tenants.find((t) => t.id === formData.tenant_id);
+    
+    if (!property || !tenant || !formData.volgende_huurwijziging) {
+      toast({
+        title: "Ontbrekende informatie",
+        description: "Vul eerst pand, huurder en huurwijzigingsdatum in.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const text = generateTenantNotificationText(
+      tenant.naam || "de huurder",
+      property.naam || "het pand",
+      formData.volgende_huurwijziging,
+      formData.huurprijs,
+      formData.nieuw_huurbedrag_na_wijziging,
+      formData.indexatie_percentage
+    );
+    
+    setNotificationText(text);
+    setShowNotificationDialog(true);
+  };
+
+  const handleCopyNotification = () => {
+    navigator.clipboard.writeText(notificationText);
+    setCopiedNotification(true);
+    toast({
+      title: "Gekopieerd!",
+      description: "Het bericht is naar je klembord gekopieerd.",
+    });
+    setTimeout(() => setCopiedNotification(false), 2000);
+  };
+
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto">
