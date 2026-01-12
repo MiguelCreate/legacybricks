@@ -250,12 +250,14 @@ export type Database = {
           huurprijs: number | null
           id: string
           indexatie_percentage: number | null
+          nieuw_huurbedrag_na_wijziging: number | null
           property_id: string
           room_id: string | null
           startdatum: string
           tenant_id: string | null
           type: Database["public"]["Enums"]["contract_type"]
           updated_at: string
+          volgende_huurwijziging: string | null
           waarborgsom: number | null
         }
         Insert: {
@@ -267,12 +269,14 @@ export type Database = {
           huurprijs?: number | null
           id?: string
           indexatie_percentage?: number | null
+          nieuw_huurbedrag_na_wijziging?: number | null
           property_id: string
           room_id?: string | null
           startdatum: string
           tenant_id?: string | null
           type: Database["public"]["Enums"]["contract_type"]
           updated_at?: string
+          volgende_huurwijziging?: string | null
           waarborgsom?: number | null
         }
         Update: {
@@ -284,12 +288,14 @@ export type Database = {
           huurprijs?: number | null
           id?: string
           indexatie_percentage?: number | null
+          nieuw_huurbedrag_na_wijziging?: number | null
           property_id?: string
           room_id?: string | null
           startdatum?: string
           tenant_id?: string | null
           type?: Database["public"]["Enums"]["contract_type"]
           updated_at?: string
+          volgende_huurwijziging?: string | null
           waarborgsom?: number | null
         }
         Relationships: [
