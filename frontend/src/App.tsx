@@ -31,6 +31,7 @@ import Academy from "./pages/Academy";
 import GedeeldeInvesteringen from "./pages/GedeeldeInvesteringen";
 import GedeeldeInvesteringenDetail from "./pages/GedeeldeInvesteringenDetail";
 import Favorieten from "./pages/Favorieten";
+import BankafschriftAnalyse from "./pages/BankafschriftAnalyse";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/gedeelde-investeringen" element={<ProtectedRoute><GedeeldeInvesteringen /></ProtectedRoute>} />
               <Route path="/gedeelde-investeringen/:id" element={<ProtectedRoute><GedeeldeInvesteringenDetail /></ProtectedRoute>} />
               <Route path="/favorieten" element={<ProtectedRoute><Favorieten /></ProtectedRoute>} />
+              <Route path="/bankafschrift" element={<ProtectedRoute><BankafschriftAnalyse /></ProtectedRoute>} />
               <Route path="/academy" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
               <Route path="/instellingen" element={<ProtectedRoute><Instellingen /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
