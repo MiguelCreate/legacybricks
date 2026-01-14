@@ -1,0 +1,157 @@
+<analysis>**original_problem_statement:**
+The user requested the implementation of several new modules for the LegacyBricks application, a real estate management tool. The requests were provided sequentially:
+1.  **Huurindexatie (Rent Indexation):** A feature to manage annual rent increases for contracts, including automatic calculation, Google Calendar reminders, and a template message for informing tenants.
+2.  **Gedeelde Vastgoedinvestering (Shared Investment):** A module to analyze real estate investments made by multiple partners. It should feature a Beginner mode with simplified cards and an Advanced mode with detailed financial tables (Cash-on-Cash, IRR, etc.).
+3.  **Shared Investment - Strategy Scenarios:** An extension to the previous module to compare three investment strategies: long-term rental, short-stay (tourism), and direct sale, showing the financial impact of each.
+4.  **Favorieten (Favorites/Market Watch):** A page to save, label, and manage links to external real estate listings (e.g., from Idealista), with automatic price/m² calculation.
+5.  **Recibo de Renda Reminder:** An automated monthly reminder for landlords to request the official rent receipt (Recibo de Renda) from the Portuguese tax authority for their tenants.
+6.  **Bankafschrift Analyse (Bank Statement Analysis):** A feature to parse bank statements. The user would use an external AI (like Qwen) to convert a bank statement (PDF/image) into a specific JSON format, paste that JSON into the app, which then categorizes transactions and allows for manual correction before saving.
+
+**User's preferred language**:
+Nederlands (Dutch). The next agent MUST respond in Dutch only.
+
+**what currently exists?**
+The agent has created the foundational database schemas and UI components for all requested features. A significant amount of time was spent guiding the user through a one-time manual setup of their initially empty Supabase database. All new features are built on the frontend (React/TypeScript) interacting directly with a Supabase (PostgreSQL) database. The FastAPI backend was not modified.
+
+The core UI pages, components, calculation helpers, and database migration files for Huurindexatie, Gedeelde Investeringen, Favorieten, Recibo de Renda, and Bankafschrift Analyse have been created.
+
+**Last working item**:
+-   **Last item agent was working:** The agent started implementing the Bankafschrift Analyse (Bank Statement Analysis) module. It created the database migration file for a  table and a helper file for parsing the JSON input.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** Frontend testing agent. The agent should test the complete flow: pasting valid/invalid JSON, seeing the parsed output, correcting unknown items, and saving the final transaction data.
+-   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+-   **Issue 1: (P0 - BLOCKER) Database Migrations Not Applied**
+    -   **Description:** The application is in a **non-working state** because none of the database schema changes for the newly added features have been applied to the user's database. The features will fail until the migrations are executed.
+    -   **Attempted fixes:** N/A. This is a necessary next step.
+    -   **Next debug checklist:**
+        1.  Consolidate all new migration scripts into a single, ordered SQL file for the user.
+        2.  The migration files to be consolidated are:
+            -   
+            -   
+            -   
+            -   
+            -   
+            -   
+        3.  Instruct the user in Dutch to execute this consolidated script in their Supabase SQL Editor. This is the absolute first step before any other work.
+    -   **Why fix this issue and what will be achieved with the fix?** This will update the database schema, making all the newly developed features functional.
+    -   **Status:** BLOCKED (on user action).
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on other issue:** None. This is the primary blocker.
+
+**In progress Task List**:
+-   **Task 1: (P0) Complete Bankafschrift Analyse Module**
+    -   **Where to resume:** The database migration and helper file are done. The next step is to build the UI in .
+    -   **What will be achieved:** A fully functional page where the user can paste JSON from an external AI, see the parsed and categorized transactions, manually re-categorize items, and save the data to their property's transaction history.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on something:** Issue 1 (Database Migrations).
+
+-   **Task 2: (P1) Implement UI for Shared Investment - Strategy Scenarios**
+    -   **Where to resume:** The database and calculation logic are ready. The agent found the existing form  too complex to modify. The next agent should refactor this form (e.g., into a multi-step wizard) to include Step 3: Choose Your Strategy and update the detail page  to display a comparison table for the scenarios.
+    -   **What will be achieved with this?** Users will be able to model and compare different investment strategies (long-term rent, short-stay, flip) for a shared property.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on something:** Issue 1 (Database Migrations).
+
+**Upcoming and Future Tasks**
+-   **(P1) Integrate Recibo de Renda Components:** The components  and  are created but not used.
+    -   Add  to the main dashboard page.
+    -   Integrate  into the  page to display reminder status and the upload button.
+-   **(P1) Implement File Upload for Recibo:** Add the file upload logic (e.g., to Supabase Storage) for the rent receipts on the  page.
+-   **(P2) Implement Google Calendar Links:** Add functionality to generate  or  links for Huurindexatie and Recibo de Renda reminders.
+-   **(P2) Implement Favorieten Module Actions:**
+    -   Add logic for the Analyseer dit pand button to navigate to the Rendementsanalysator with pre-filled data.
+    -   Implement the Deel met partner PDF generation.
+-   **(P2) Implement Gedeelde Investering Export:** Add PDF/Excel export functionality for the shared investment analysis.
+-   **(P3) Add Dashboard Widgets:** Create widgets for Favorieten and any other relevant modules.
+
+**Completed work in this session**
+-   **Initial Database Setup:** Successfully guided the user through a complete manual setup of a fresh Supabase database.
+-   **Huurindexatie Feature:** Created the core UI on the  page with a new Huurindexatie tab and the necessary database migration script.
+-   **Gedeelde Investeringen Feature:** Built the foundational module with pages for creating, listing, and viewing shared investments, including Beginner and Advanced modes.
+-   **Favorieten Feature:** Implemented the core module with a page to add and list favorite property listings.
+-   **Recibo de Renda Reminder Feature:** Created the initial database schema and UI components.
+-   **Bankafschrift Analyse Feature:** Created the initial database schema.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Frontend:** React, TypeScript, Vite, TailwindCSS, Shadcn UI
+-   **Database:** Supabase (PostgreSQL). **This is critical, as the project is NOT using MongoDB.**
+-   **Architecture:** The application logic is almost entirely on the frontend, which communicates directly with Supabase using its client-side library. The FastAPI backend is not being used for the new features.
+-   **Database Migrations:** All schema changes are managed via manual SQL files stored in . These must be applied by the user in the Supabase Dashboard.
+
+**key DB schema**
+-   : Extended with  (date),  (numeric).
+-    (new): Stores main details of a shared property investment.
+-    (new): Stores details of each partner in a shared investment.
+-    (new): Stores inputs for different investment strategies.
+-    (new): Stores saved property listings from external sites.
+-   : Extended with  (date),  (text),  (integer).
+-    (new): Stores monthly aggregated financial transactions per property.
+
+**changes in tech stack**
+-   The project uses Supabase (PostgreSQL) as its database, not MongoDB as might be suggested by the base template name. This is a crucial detail for the next agent.
+
+**All files of reference**
+-   **Migration Scripts (Critical):** All files in .
+-   **New Pages:**
+    -   
+    -   
+    -   
+-   **New Components:** All files within , , , .
+-   **Updated Files:**
+    -   
+    -   
+    -    (routing)
+    -    (menu)
+
+**Areas that need refactoring**:
+-   The  component became too complex when adding the Scenarios feature. It should be broken down into a multi-step form or smaller, focused components to improve maintainability.
+-   The  page is over 800 lines long. The agent started creating a  component to help, and this pattern of extracting logic into smaller components should be continued.
+
+**Critical Info for New Agent**
+-   **MUST READ:** The immediate first step is to guide the user to apply all pending database migrations located in . Without this, none of the newly implemented features will work. Consolidate them into one script for the user.
+-   **MUST READ:** The project uses **Supabase (PostgreSQL)**, not MongoDB. All feature logic is implemented in the **React frontend**. Do not attempt to use the FastAPI backend for these features unless specified.
+-   All communication with the user must be in **Dutch**.
+
+**documents and test reports created in this job**
+-   
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **Request:** Implement a Bank Statement Analysis module using an external AI via JSON copy-paste.
+2.  **Request:** Implement a Recibo de Renda reminder module.
+3.  **Request:** Implement a Favorites/Market Watch module.
+4.  **Request:** Expand the Shared Investment module to include strategy scenario comparisons (long-term rent, short-stay, flip).
+5.  **Confirmation:** User confirms to proceed with Fase 2 of the Shared Investment implementation.
+6.  **Request:** Initial request for the Gedeelde Vastgoedinvestering (Shared Investment) module.
+7.  **Clarification:** User answers questions about the shared investment module, specifying it's for new properties, each investor can have their own mortgage, rent is stable, it needs a separate page, and remaining debt should be calculated automatically.
+8.  **Question:** User asks if database changes always have to go through the  platform. Agent clarifies that it can be done on Emergent via manual migrations.
+9.  **Confirmation:** User confirms that the manual database setup worked and asks if this process is required for every change.
+10. **Error Report:** User reports an error while running the database setup script. Agent correctly identifies the script is too long and splits it into smaller parts.
+
+**Project Health Check:**
+-   **Broken:** All new features are currently broken at the data layer. The application will throw errors when trying to access pages for the new modules because the corresponding tables/columns do not exist in the user's database yet.
+-   **Mocked:** No features are mocked.
+
+**3rd Party Integrations**
+-   **Supabase:** Used for database (PostgreSQL), authentication, and storage.
+-   **Google Calendar:** Planned for generating reminder links (not implemented).
+-   **Qwen AI:** Used externally by the user for bank statement analysis. There is no direct API integration.
+
+**Testing status**
+-   **Testing agent used after significant changes:** NO
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** []
+-   **Known regressions:** None.
+
+**What agent forgot to execute**
+-   The agent created new UI components (, ) but did not integrate them into their parent pages (Dashboard and Huurders page, respectively).
+-   The agent did not consolidate the multiple new SQL migration files into a single, user-friendly script, which would simplify the required manual step for the user.</analysis>
