@@ -1,7 +1,7 @@
 import { 
   Home, Building2, Users, Wallet, Settings, Target, ChevronLeft, ChevronRight, 
   Snowflake, PiggyBank, Sunset, FileText, Heart, ClipboardCheck, Calculator, 
-  Wrench, Building, ChevronDown, TrendingUp, GraduationCap, Bot, Scale, UsersRound, Star
+  Wrench, Building, ChevronDown, TrendingUp, GraduationCap, Bot, Scale, UsersRound, Star, Receipt
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -43,6 +43,7 @@ const navGroups: NavGroup[] = [
       { icon: Building2, label: "Multi-Unit", path: "/multi-unit" },
       { icon: Bot, label: "AI Analyzer", path: "/ai-analyzer" },
       { icon: Scale, label: "Verkopen of Behouden?", path: "/verkopen-of-behouden" },
+      { icon: Receipt, label: "Bankafschrift Analyse", path: "/bankafschrift" },
     ],
   },
   {
