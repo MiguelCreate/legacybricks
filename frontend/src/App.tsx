@@ -28,6 +28,8 @@ import VerkopenOfBehouden from "./pages/VerkopenOfBehouden";
 import Aannemers from "./pages/Aannemers";
 import VvEOverzicht from "./pages/VvEOverzicht";
 import Academy from "./pages/Academy";
+import GedeeldeInvesteringen from "./pages/GedeeldeInvesteringen";
+import GedeeldeInvesteringenDetail from "./pages/GedeeldeInvesteringenDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +63,8 @@ const App = () => (
               <Route path="/verkopen-of-behouden" element={<ProtectedRoute><VerkopenOfBehouden /></ProtectedRoute>} />
               <Route path="/aannemers" element={<ProtectedRoute><Aannemers /></ProtectedRoute>} />
               <Route path="/vve" element={<ProtectedRoute><VvEOverzicht /></ProtectedRoute>} />
+              <Route path="/gedeelde-investeringen" element={<ProtectedRoute><GedeeldeInvesteringen /></ProtectedRoute>} />
+              <Route path="/gedeelde-investeringen/:id" element={<ProtectedRoute><GedeeldeInvesteringenDetail /></ProtectedRoute>} />
               <Route path="/academy" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
               <Route path="/instellingen" element={<ProtectedRoute><Instellingen /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
