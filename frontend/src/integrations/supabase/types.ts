@@ -1491,11 +1491,14 @@ export type Database = {
           borg: number | null
           created_at: string
           email: string | null
+          herinnering_recibo_dag: number | null
           huurbedrag: number
           id: string
+          laatste_recibo_datum: string | null
           naam: string
           notities: string | null
           property_id: string
+          recibo_bestand_url: string | null
           room_id: string | null
           telefoon: string | null
           unit_naam: string | null
@@ -1509,11 +1512,14 @@ export type Database = {
           borg?: number | null
           created_at?: string
           email?: string | null
+          herinnering_recibo_dag?: number | null
           huurbedrag: number
           id?: string
+          laatste_recibo_datum?: string | null
           naam: string
           notities?: string | null
           property_id: string
+          recibo_bestand_url?: string | null
           room_id?: string | null
           telefoon?: string | null
           unit_naam?: string | null
@@ -1527,11 +1533,14 @@ export type Database = {
           borg?: number | null
           created_at?: string
           email?: string | null
+          herinnering_recibo_dag?: number | null
           huurbedrag?: number
           id?: string
+          laatste_recibo_datum?: string | null
           naam?: string
           notities?: string | null
           property_id?: string
+          recibo_bestand_url?: string | null
           room_id?: string | null
           telefoon?: string | null
           unit_naam?: string | null
