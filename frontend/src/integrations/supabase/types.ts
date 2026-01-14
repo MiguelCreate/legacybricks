@@ -1513,6 +1513,95 @@ export type Database = {
           },
         ]
       }
+      investment_partners: {
+        Row: {
+          created_at: string
+          eigen_hypotheek_bedrag: number | null
+          id: string
+          looptijd_jaren: number | null
+          naam: string
+          percentage: number
+          rente_percentage: number | null
+          shared_investment_id: string
+        }
+        Insert: {
+          created_at?: string
+          eigen_hypotheek_bedrag?: number | null
+          id?: string
+          looptijd_jaren?: number | null
+          naam: string
+          percentage: number
+          rente_percentage?: number | null
+          shared_investment_id: string
+        }
+        Update: {
+          created_at?: string
+          eigen_hypotheek_bedrag?: number | null
+          id?: string
+          looptijd_jaren?: number | null
+          naam?: string
+          percentage?: number
+          rente_percentage?: number | null
+          shared_investment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_partners_shared_investment_id_fkey"
+            columns: ["shared_investment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_investments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_investments: {
+        Row: {
+          aankoopprijs: number
+          created_at: string
+          id: string
+          imt: number | null
+          indexatie_percentage: number | null
+          jaarlijkse_opex: number | null
+          maand_huur: number
+          naam: string
+          notities: string | null
+          renovatie_kosten: number | null
+          updated_at: string
+          user_id: string
+          verkoopwaarde_10j: number
+        }
+        Insert: {
+          aankoopprijs: number
+          created_at?: string
+          id?: string
+          imt?: number | null
+          indexatie_percentage?: number | null
+          jaarlijkse_opex?: number | null
+          maand_huur: number
+          naam: string
+          notities?: string | null
+          renovatie_kosten?: number | null
+          updated_at?: string
+          user_id: string
+          verkoopwaarde_10j: number
+        }
+        Update: {
+          aankoopprijs?: number
+          created_at?: string
+          id?: string
+          imt?: number | null
+          indexatie_percentage?: number | null
+          jaarlijkse_opex?: number | null
+          maand_huur?: number
+          naam?: string
+          notities?: string | null
+          renovatie_kosten?: number | null
+          updated_at?: string
+          user_id?: string
+          verkoopwaarde_10j?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
