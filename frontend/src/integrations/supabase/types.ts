@@ -405,6 +405,71 @@ export type Database = {
         }
         Relationships: []
       }
+      maandelijkse_transacties: {
+        Row: {
+          id: string
+          user_id: string
+          property_id: string | null
+          maand: string
+          huur_inkomsten: number
+          hypotheek_aflossing: number
+          hypotheek_rente: number
+          imi_belasting: number
+          onderhoud: number
+          utilities: number
+          verzekering: number
+          overig: number
+          notities: string | null
+          ai_analyse_gebruikt: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          property_id?: string | null
+          maand: string
+          huur_inkomsten?: number
+          hypotheek_aflossing?: number
+          hypotheek_rente?: number
+          imi_belasting?: number
+          onderhoud?: number
+          utilities?: number
+          verzekering?: number
+          overig?: number
+          notities?: string | null
+          ai_analyse_gebruikt?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          property_id?: string | null
+          maand?: string
+          huur_inkomsten?: number
+          hypotheek_aflossing?: number
+          hypotheek_rente?: number
+          imi_belasting?: number
+          onderhoud?: number
+          utilities?: number
+          verzekering?: number
+          overig?: number
+          notities?: string | null
+          ai_analyse_gebruikt?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maandelijkse_transacties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gemeenschappelijk_onderhoud: {
         Row: {
           created_at: string
