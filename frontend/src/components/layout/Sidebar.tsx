@@ -1,7 +1,7 @@
 import { 
   Home, Building2, Users, Wallet, Settings, Target, ChevronLeft, ChevronRight, 
   Snowflake, PiggyBank, Sunset, FileText, Heart, ClipboardCheck, Calculator, 
-  Wrench, Building, ChevronDown, TrendingUp, GraduationCap, Bot, Scale
+  Wrench, Building, ChevronDown, TrendingUp, GraduationCap, Bot, Scale, UsersRound
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -26,6 +26,7 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Building2, label: "Panden", path: "/panden" },
       { icon: Users, label: "Huurders", path: "/huurders" },
+      { icon: UsersRound, label: "Gedeelde Investeringen", path: "/gedeelde-investeringen" },
       { icon: Wrench, label: "Aannemers", path: "/aannemers" },
       { icon: FileText, label: "Contracten", path: "/contracten" },
       { icon: ClipboardCheck, label: "Inchecklijsten", path: "/inchecklijsten" },
