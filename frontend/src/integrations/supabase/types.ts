@@ -363,6 +363,48 @@ export type Database = {
           },
         ]
       }
+      favorieten: {
+        Row: {
+          created_at: string
+          gearchiveerd: boolean
+          id: string
+          link: string
+          locatie: string | null
+          notitie: string | null
+          oppervlakte_m2: number | null
+          prijs: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gearchiveerd?: boolean
+          id?: string
+          link: string
+          locatie?: string | null
+          notitie?: string | null
+          oppervlakte_m2?: number | null
+          prijs?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gearchiveerd?: boolean
+          id?: string
+          link?: string
+          locatie?: string | null
+          notitie?: string | null
+          oppervlakte_m2?: number | null
+          prijs?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gemeenschappelijk_onderhoud: {
         Row: {
           created_at: string
