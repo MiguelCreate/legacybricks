@@ -1558,12 +1558,17 @@ export type Database = {
         Row: {
           aankoopprijs: number
           created_at: string
+          hypotheek_looptijd_jaren: number | null
+          hypotheek_percentage: number | null
+          hypotheek_rente: number | null
           id: string
           imt: number | null
           indexatie_percentage: number | null
+          inrichting_kosten: number | null
           jaarlijkse_opex: number | null
           maand_huur: number
           naam: string
+          notaris_kosten: number | null
           notities: string | null
           renovatie_kosten: number | null
           updated_at: string
@@ -1573,12 +1578,17 @@ export type Database = {
         Insert: {
           aankoopprijs: number
           created_at?: string
+          hypotheek_looptijd_jaren?: number | null
+          hypotheek_percentage?: number | null
+          hypotheek_rente?: number | null
           id?: string
           imt?: number | null
           indexatie_percentage?: number | null
+          inrichting_kosten?: number | null
           jaarlijkse_opex?: number | null
           maand_huur: number
           naam: string
+          notaris_kosten?: number | null
           notities?: string | null
           renovatie_kosten?: number | null
           updated_at?: string
@@ -1588,12 +1598,17 @@ export type Database = {
         Update: {
           aankoopprijs?: number
           created_at?: string
+          hypotheek_looptijd_jaren?: number | null
+          hypotheek_percentage?: number | null
+          hypotheek_rente?: number | null
           id?: string
           imt?: number | null
           indexatie_percentage?: number | null
+          inrichting_kosten?: number | null
           jaarlijkse_opex?: number | null
           maand_huur?: number
           naam?: string
+          notaris_kosten?: number | null
           notities?: string | null
           renovatie_kosten?: number | null
           updated_at?: string
@@ -1601,6 +1616,68 @@ export type Database = {
           verkoopwaarde_10j?: number
         }
         Relationships: []
+      }
+      investment_scenarios: {
+        Row: {
+          actief: boolean | null
+          adr_shortstay: number | null
+          bezetting_langdurig: number | null
+          bezetting_shortstay: number | null
+          created_at: string
+          extra_kosten_shortstay: number | null
+          id: string
+          maand_huur_langdurig: number | null
+          opex_jaar_langdurig: number | null
+          opex_jaar_shortstay: number | null
+          scenario_type: string
+          shared_investment_id: string
+          updated_at: string
+          verkoopkosten_percentage: number | null
+          verkoopwaarde: number | null
+        }
+        Insert: {
+          actief?: boolean | null
+          adr_shortstay?: number | null
+          bezetting_langdurig?: number | null
+          bezetting_shortstay?: number | null
+          created_at?: string
+          extra_kosten_shortstay?: number | null
+          id?: string
+          maand_huur_langdurig?: number | null
+          opex_jaar_langdurig?: number | null
+          opex_jaar_shortstay?: number | null
+          scenario_type: string
+          shared_investment_id: string
+          updated_at?: string
+          verkoopkosten_percentage?: number | null
+          verkoopwaarde?: number | null
+        }
+        Update: {
+          actief?: boolean | null
+          adr_shortstay?: number | null
+          bezetting_langdurig?: number | null
+          bezetting_shortstay?: number | null
+          created_at?: string
+          extra_kosten_shortstay?: number | null
+          id?: string
+          maand_huur_langdurig?: number | null
+          opex_jaar_langdurig?: number | null
+          opex_jaar_shortstay?: number | null
+          scenario_type?: string
+          shared_investment_id?: string
+          updated_at?: string
+          verkoopkosten_percentage?: number | null
+          verkoopwaarde?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_scenarios_shared_investment_id_fkey"
+            columns: ["shared_investment_id"]
+            isOneToOne: false
+            referencedRelation: "shared_investments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
