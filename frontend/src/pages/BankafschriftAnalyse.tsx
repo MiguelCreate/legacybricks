@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -228,7 +228,7 @@ export default function BankafschriftAnalyse() {
   };
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="container mx-auto py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -605,7 +605,7 @@ export default function BankafschriftAnalyse() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AppLayout>
   );
 }
 
